@@ -36,6 +36,21 @@ extern struct command __stop_cmds[];
 */
 struct command *find_command(const char *name);
 
+/**
+** \fn char *command_generator(const char *text, int state)
+**
+** \param text Word to complete
+** \param state Lets us know wether to start from scratch
+**
+** \brief Get the next name partially matches from the
+** commands' array. Store the next index in a static variable.
+** The index is set to 0 when state is at 0.
+**
+** \return Return the newly allocated name. If no name matches,
+** return NULL.
+*/ 
+char *cmd_generator(const char *text, int state);
+
 int print_help(struct debug_infos *dinfos, const char *args[]);
 
 int do_quit(struct debug_infos *dinfos, const char *args[]);
