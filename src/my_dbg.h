@@ -1,9 +1,19 @@
-#ifndef MY_DBG_H_
-# define MY_DBG_H_
+#ifndef MY_DBG_H
+# define MY_DBG_H
+
+# include <stddef.h>
+
+# include "mapping.h"
+
+# define HISTORY_FILE ".mydbg_history"
+# define PROMPT "mydbg> "
 
 struct debug_infos {
-    void *elf;
-    size_t size;
+    struct melf melf;
 };
 
-#endif /* !MY_DBG_H_ */
+struct debug_infos *init_debug_infos(void *elf, size_t size);
+
+int destroy_debug_infos(struct debug_infos *dinfos);
+
+#endif /* !MY_DBG_H */

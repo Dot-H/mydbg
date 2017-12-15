@@ -1,7 +1,3 @@
-/**
-** \file mapping.c
-*/
-
 #include <elf.h>
 #include <err.h>
 #include <fcntl.h>
@@ -69,17 +65,17 @@ void *map_elf(const char *file, size_t *size)
     struct stat stat;
     if (fstat(fd, &stat) == -1){
         warn("Cannot fstat fd %d", fd);
-        goto close_fd_ret;
+        goto out_close_fd;
     }
 
     mapped = get_mapped_elf(stat, fd);
     if (!mapped)
-        goto close_fd_ret;
+        goto out_close_fd;
 
     if (!tst_elf(file, mapped, stat.st_size))
         mapped = NULL; // unmaped in tst_elf
 
-close_fd_ret:
+out_close_fd:
     close(fd);
     *size = stat.st_size;
     return mapped;

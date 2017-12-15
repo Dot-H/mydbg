@@ -1,5 +1,10 @@
-#ifndef MAPPING_H_
-# define MAPPING_H_
+#ifndef MAPPING_H
+# define MAPPING_H
+
+struct melf {
+    void  *elf;
+    size_t size;
+};
 
 /**
 ** \fn void *get_mapped_elf(struct stat stat, int fd)
@@ -12,4 +17,4 @@
 */
 void *map_elf(const char *file, size_t *size);
 
-#endif /* !MAPPING_H_ */
+#endif /* !MAPPING_H */

@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project(MY_DBG C)
 set(CMAKE_C_COMPILER "gcc")
-set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -fsanitize=address")
-include_directories("src/" "src/opening")
+set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -D_DEFAULT_SOURCE -fsanitize=address")
+include_directories("src/" "src/opening" "src/inputs")
 
 set(SRC
         src/opening/mapping.c
+        src/inputs/inputs.c
         src/my_dbg.c
   )
 
