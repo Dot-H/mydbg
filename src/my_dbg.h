@@ -7,6 +7,7 @@
 
 # define HISTORY_FILE ".mydbg_history"
 # define PROMPT "mydbg> "
+# define QUIT_MSG "quit"
 
 struct debug_infos {
     struct melf melf;

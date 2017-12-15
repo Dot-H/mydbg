@@ -9,6 +9,8 @@
 #include "my_dbg.h"
 #include "inputs.h"
 #include "mapping.h"
+#include "commands.h"
+
 
 struct debug_infos *init_debug_infos(void *elf, size_t size)
 {
@@ -41,13 +43,19 @@ static void interaction(struct debug_infos *dinfos)
 
     char *line = NULL;
     while ((line = get_line())) {
-        printf("%s\n", line);
+        struct command *cmd = find_command(line);
+        if (!cmd)
+        {
+            fprintf(stderr, "Command not found\n");
+            ret = 1;
+        }
+        else
+            ret = cmd ->func(dinfos, NULL);
+
         free(line);
-        (void)dinfos;
-        ret = ret;
     }
 
-    fprintf(stderr, "quit\n");
+    fprintf(stderr, QUIT_MSG"\n");
     exit(ret);
 }
 

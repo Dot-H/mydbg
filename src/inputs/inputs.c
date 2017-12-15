@@ -8,19 +8,25 @@
 
 static char *get_home(const char *str)
 {
-  const char *home = getenv("HOME");
-  if (!home)
+    static char *home = NULL;
+    static size_t len = 0;
+    if (!home){
+        home = getenv("HOME");
+        if (!home)
+            return NULL;
+
+        len = strlen(home);
+    }
+
+    char *res = calloc(len + strlen(str) + 2, sizeof(char));
+    if (!res)
     return NULL;
 
-  char *res = calloc(strlen(home) + strlen(str) + 2, sizeof(char));
-  if (!res)
-    return NULL;
+    strcat(res, home);
+    strcat(res, "/");
+    strcat(res, str);
 
-  strcat(res, home);
-  strcat(res, "/");
-  strcat(res, str);
-
-  return res;
+    return res;
 }
 
 void update_history(int ret, void *ptr_home_hist)

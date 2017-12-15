@@ -13,8 +13,14 @@ Usage
     argument is provided, this must be a 64bits elf.
 
     __Example:__
-    
+
         ./my_dbg elf
+
+Commands
+--------
+
+    help    Print documentation for every command
+    quit    Quits the debugger
 
 Return values
 -------------
@@ -22,6 +28,11 @@ Return values
     2   argument error
     1   error while processing the file
     0   everything went fine
+
+Notes
+-----
+
+    A history file is written in $HOME.
 
 AUTHORS
 -------
