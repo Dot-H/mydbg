@@ -3,7 +3,7 @@
 #include "commands.h"
 #include "my_dbg.h"
 
-int print_help(struct debug_infos *dinfos, const char *args[])
+int print_help(struct debug_infos *dinfos, char *args[])
 {
     (void)dinfos;
     (void)args;

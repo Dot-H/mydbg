@@ -1,5 +1,7 @@
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -102,6 +104,35 @@ char *strip_whitespace(char *str)
 
     str[tmp + 1] = '\0';
     return str + idx;
+}
+
+char **build_args(char *text)
+{
+    size_t cpcity = ARG_REALLOC;
+    char **args   = malloc(sizeof(char *) * cpcity);
+    if (!args)
+        goto err_enomem_free;
+
+    args[0] = strtok(text, WHITESPACES_DELIM);
+    for (size_t i = 1; (args[i] = strtok(NULL, WHITESPACES_DELIM)); ++i)
+    {
+        if (i == cpcity - 1)
+        {
+            cpcity   += ARG_REALLOC;
+            void *tmp = realloc(args, cpcity * sizeof(char *));
+            if (!tmp)
+                goto err_enomem_free;
+
+            args = tmp;
+        }
+    }
+
+    return args;
+
+err_enomem_free:
+    warn("Could not allocate enough memory to build arguments");
+    free(args);
+    return NULL;
 }
 
 char *get_line(void)

@@ -53,20 +53,21 @@ static int interaction(struct debug_infos *dinfos)
 
     char *line = NULL;
     while ((line = get_line())) {
-        char *stripped = strip_whitespace(line);
-        if (*stripped == '\0')
-            goto cont_free_line;
+        char **args = build_args(line);
+        if (!args)
+            goto cont_free;
 
-        struct command *cmd = find_command(stripped);
+        struct command *cmd = find_command(args[0]);
         if (!cmd)
         {
             fprintf(stderr, "Command not found\n");
             ret = 1;
         }
         else
-            ret = cmd->func(dinfos, NULL);
+            ret = cmd->func(dinfos, args);
 
-cont_free_line:
+cont_free:
+        free(args);
         free(line);
     }
 

@@ -22,6 +22,8 @@ Commands
     help    Print documentation for every command
     quit    Quit mydbg
     run     Run the currently loaded binary
+    info_process
+            Print all the running process
 
 Return values
 -------------

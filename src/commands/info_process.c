@@ -6,11 +6,11 @@
 #include "trace.h"
 #include "dproc.h"
 
-int print_process(struct debug_infos *dinfos, const char *args[])
+int print_process(struct debug_infos *dinfos, char *args[])
 {
     (void)args;
     if (dinfos->dproc_table->nmemb == 0){
-        printf("No running process");
+        printf("No running process\n");
         return -1;
     }
 
@@ -25,8 +25,8 @@ int print_process(struct debug_infos *dinfos, const char *args[])
         struct data *tmp;
 
         wl_list_for_each(tmp, head, link){
-            struct dproc *proc = tmp->value; 
-            printf("\t[process %d] status: %d\n", proc->pid, proc->status); 
+            struct dproc *proc = tmp->value;
+            printf("\t[process %d] status: %d\n", proc->pid, proc->status);
             ++j;
         }
     }
@@ -34,4 +34,4 @@ int print_process(struct debug_infos *dinfos, const char *args[])
     return 0;
 }
 
-shell_cmd(infoprocess, print_process, "Prints all running process");
+shell_cmd(info_process, print_process, "Prints all running process");

@@ -6,7 +6,7 @@
 #include "trace.h"
 #include "dproc.h"
 
-int do_run(struct debug_infos *dinfos, const char *args[])
+int do_run(struct debug_infos *dinfos, char *args[])
 {
     (void)args;
     int status;

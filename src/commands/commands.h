@@ -5,7 +5,7 @@
 
 struct debug_infos;
 
-typedef int (*cmd_func)(struct debug_infos *, const char *args[]);
+typedef int (*cmd_func)(struct debug_infos *, char *args[]);
 
 struct command {
     char *name;
@@ -50,11 +50,5 @@ struct command *find_command(const char *name);
 ** return NULL.
 */
 char *cmd_generator(const char *text, int state);
-
-int print_help(struct debug_infos *dinfos, const char *args[]);
-
-int do_quit(struct debug_infos *dinfos, const char *args[]);
-
-int do_run(struct debug_infos *dinfos, const char *args[]);
 
 #endif /* !COMMANDS_H */
