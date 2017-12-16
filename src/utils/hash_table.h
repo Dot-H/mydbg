@@ -4,12 +4,12 @@
 # include "wayland-util.h"
 
 struct data {
-   void *key; 
-   void *elt;
+   void *key; /* Should be an element inside value */
+   void *value;
    struct wl_list link;
 };
 
-struct hash_table
+struct htable
 {
     size_t nmemb; /* Number of elements in the table and collision lists */
     size_t size;  /* Current number of cell in the array */
@@ -19,23 +19,61 @@ struct hash_table
     struct data *array; /* Array of sentinels to the data */
 };
 
-struct hash_table *hash_table_creat(size_t (*hash_func)(void *), size_t size,
+/**
+** \param hash_func function pointer to the hashing function which
+** will be used in the htable.
+** \param key_cmp function pointer to the function comparing keys.
+** This function must return 1 if keys match and 0 otherwise.
+** \param size size of the htable
+**
+** \brief allocates and fill a struct htable and its array.
+**
+** \note each case of the array attribute is set as the sentinell
+** for its collision list.
+**
+** \return Returns a newly allocated and filled hash table.
+*/
+struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
                                     int (*key_cmp)(void *, void *));
 
-void hash_table_destroy(struct hash_table *hash_table);
-
-struct data *hash_table_get(const struct hash_table *hash_table, void *key);
-
-struct data *hash_table_pop(struct hash_table *hash_table, void *key);
-
-/*
-** Push front a new pair list at the index given by the hash of
-** pointer value.
+/**
+** \param htable struct to destroy.
 **
-** Returns true on success and false on failure.
+** \brief Destroys all the allocated memory inside \p htable. 
 */
-int hash_table_insert(struct hash_table *hash_table, void *value, void *key);
+void htable_destroy(struct htable *htable);
 
-void hash_table_dump(struct hash_table *hash);
+/**
+** \param key Key to search inside \p htable
+**
+** \brief Search a matching key inside the htable.
+**
+** \return Return the data corresponding to the key if found and
+** NULL if the key is not present in \p htable.
+*/
+struct data *htable_get(const struct htable *htable, void *key);
+
+/**
+** \param key Key to remove from \p htable
+**
+** \brief Search key and removes it from its corresponding
+** collision list.
+**
+** \return Return the data corresponding to the key if found and NULL
+** otherwise.
+*/
+struct data *htable_pop(struct htable *htable, void *key);
+
+/**
+** \param key key corresponding to \p value
+** \param value value to insert in \p htable
+**
+** \brief Insert \p value inside \p htable at the head of the
+** collision list corresponding to the hash of \p key
+**
+** \return Return -1 if the key is already present in the htable
+** and 0 if the value has been successfully inserted into \p htable
+*/
+int htable_insert(struct htable *htable, void *value, void *key);
 
 #endif /* !HASH_TABLE_H */

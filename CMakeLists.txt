@@ -10,12 +10,14 @@ include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
 set(SRC
         src/commands/commands.c
         src/commands/help.c
+        src/commands/info_process.c
         src/commands/quit.c
         src/commands/run.c
         src/inputs/inputs.c
         src/my_dbg.c
         src/opening/mapping.c
         src/tracing/trace.c
+        src/utils/dproc.c
         src/utils/hash_table.c
         src/utils/wayland-util.c
   )
