@@ -10,6 +10,7 @@
 #include "inputs.h"
 #include "mapping.h"
 #include "commands.h"
+#include "dproc.h"
 
 
 struct debug_infos *init_debug_infos(char **args, void *elf, size_t size)
@@ -18,9 +19,10 @@ struct debug_infos *init_debug_infos(char **args, void *elf, size_t size)
     if (!dinfos)
         err(1, "Cannot allocate struct debug_infos");
 
-    dinfos->melf.elf  = elf;
-    dinfos->melf.size = (elf) ? size : 0;
-    dinfos->args = args;
+    dinfos->melf.elf    = elf;
+    dinfos->melf.size   = (elf) ? size : 0;
+    dinfos->args        = args;
+    dinfos->dproc_table = dproc_htable_creat();
 
     return dinfos;
 }
@@ -30,7 +32,9 @@ void empty_debug_infos(struct debug_infos *dinfos)
     if (munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
+    dproc_htable_destroy(dinfos->dproc_table);
     memset(dinfos, 0, sizeof(struct debug_infos));
+    dinfos->dproc_table = dproc_htable_creat();
 }
 
 void destroy_debug_infos(struct debug_infos *dinfos)
@@ -38,6 +42,7 @@ void destroy_debug_infos(struct debug_infos *dinfos)
     if (munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
+    dproc_htable_destroy(dinfos->dproc_table);
     free(dinfos);
 }
 

@@ -5,6 +5,7 @@
 # include <sys/types.h>
 
 # include "mapping.h"
+# include "hash_table.h"
 
 # define HISTORY_FILE ".mydbg_history"
 # define PROMPT "mydbg> "
@@ -13,6 +14,8 @@
 struct debug_infos {
     char **args;
     struct melf melf;
+
+    struct htable *dproc_table; /* Hash table containing running process */
 };
 
 struct debug_infos *init_debug_infos(char **args, void *elf, size_t size);

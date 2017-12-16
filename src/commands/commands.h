@@ -55,4 +55,6 @@ int print_help(struct debug_infos *dinfos, const char *args[]);
 
 int do_quit(struct debug_infos *dinfos, const char *args[]);
 
+int do_run(struct debug_infos *dinfos, const char *args[]);
+
 #endif /* !COMMANDS_H */
