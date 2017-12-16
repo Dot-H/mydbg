@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -11,11 +10,9 @@
 #include "inputs.h"
 #include "mapping.h"
 #include "commands.h"
-#include "trace.h"
 
 
-struct debug_infos *init_debug_infos(char *const *args, void *elf,
-                                     size_t size)
+struct debug_infos *init_debug_infos(char **args, void *elf, size_t size)
 {
     struct debug_infos *dinfos = malloc(sizeof(struct debug_infos));
     if (!dinfos)
@@ -48,12 +45,13 @@ static int interaction(struct debug_infos *dinfos)
 {
     int ret = 0;
     init_interaction();
-    if (dinfos->melf.elf)
-        trace_binary(dinfos);
 
     char *line = NULL;
     while ((line = get_line())) {
         char *stripped = strip_whitespace(line);
+        if (*stripped == '\0')
+            goto cont_free_line;
+
         struct command *cmd = find_command(stripped);
         if (!cmd)
         {
@@ -63,6 +61,7 @@ static int interaction(struct debug_infos *dinfos)
         else
             ret = cmd->func(dinfos, NULL);
 
+cont_free_line:
         free(line);
     }
 

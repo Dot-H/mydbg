@@ -1,5 +1,18 @@
 ## my_dbg TODO
 
 portability:
+    [ ] 32bits elf support
 
-  [ ] 32bits elf support
+
+commands:
+    [ ] file
+    [ ] passing argument to run / file
+    [ ] replace binary by its absolute path
+
+global:
+    [ ] check for running process when quitting
+
+utils:
+    [ ] destroy list
+    [ ] destroy hash_table
+    [ ] expand hash_table when necessary

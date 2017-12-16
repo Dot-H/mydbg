@@ -2,37 +2,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ptrace.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include "my_dbg.h"
 
-static void print_exit(pid_t pid, int status)
+static int print_exit(pid_t pid, int status)
 {
+    int ret;
     if (WIFEXITED(status)){
-        fprintf(stderr, "%d exited normally with code %d\n",
-                pid, WEXITSTATUS(status));
+        ret = WEXITSTATUS(status);
+        fprintf(stderr, "%d exited normally with code %d\n", pid, ret);
     }
     else if (WIFSIGNALED(status)){
-        fprintf(stderr, "%d terminates by signal %d\n", pid, WTERMSIG(status));
+        ret =  WTERMSIG(status);
+        fprintf(stderr, "%d terminates by signal %d\n", pid, ret);
     }
     else if (WIFSTOPPED(status)){
-        fprintf(stderr, "%d stopped by signal %d\n", pid, WSTOPSIG(status));
+        ret = WSTOPSIG(status);
+        fprintf(stderr, "%d stopped by signal %d\n", pid, ret);
     }
     else if (WIFCONTINUED(status)){
+        ret = SIGCONT;
         fprintf(stderr, "%d continued\n", pid);
     }
     else{
+        ret = status;
         fprintf(stderr, "%d has received an unknown signal. status: %d\n",
-                pid, status);
+                pid, ret);
     }
+
+    return ret;
 }
 
-void trace_binary(struct debug_infos *dinfos)
+int trace_binary(struct debug_infos *dinfos)
 {
     if (!dinfos->melf.elf)
-        return;
+        return -1;
 
     pid_t pid = fork();
     if (pid == -1)
@@ -49,9 +55,7 @@ void trace_binary(struct debug_infos *dinfos)
 
     int status = -1;
     waitpid(pid, &status, 0);
-    print_exit(pid, status);
-
-    return;
+    return print_exit(pid, status);
 
 err_empty_dinfos:
     empty_debug_infos(dinfos);
@@ -59,4 +63,5 @@ err_print_errno:
     warn("Failed to trace %s", dinfos->args[0]);
     if (pid == 0)
         exit(1);
+    return -1;
 }

@@ -5,16 +5,19 @@ set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -D_DEFAULT_SOURCE \
         -DDEBUG")#-fsanitize=address")
 include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
-        src/tracing")
+        src/tracing" "src/utils")
 
 set(SRC
         src/commands/commands.c
         src/commands/help.c
         src/commands/quit.c
+        src/commands/run.c
         src/inputs/inputs.c
         src/my_dbg.c
         src/opening/mapping.c
         src/tracing/trace.c
+        src/utils/hash_table.c
+        src/utils/wayland-util.c
   )
 
 add_executable(my_dbg ${SRC})

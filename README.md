@@ -20,19 +20,24 @@ Commands
 --------
 
     help    Print documentation for every command
-    quit    Quits the debugger
+    quit    Quit mydbg
+    run     Run the currently loaded binary
 
 Return values
 -------------
 
     2   argument error
-    1   error while processing the file
+    1   error while processing the executable
     0   everything went fine
 
 Notes
 -----
 
-    A history file is written in $HOME.
+    Array and lists are from "https://github.com/wayland-project/wayland".
+    Copyrights in wayland-util.h and wayland-util.c.
+
+    A history file named .mydbg_history is written in $HOME. The name can
+    be modified in my_dbg.h
 
 AUTHORS
 -------

@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "commands.h"
+#include "my_dbg.h"
 
 int print_help(struct debug_infos *dinfos, const char *args[])
 {

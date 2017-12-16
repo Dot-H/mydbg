@@ -84,7 +84,7 @@ void init_interaction(void)
     rl_attempted_completion_function = completion;
 }
 
-char *strip_whitespace(char *str)  
+char *strip_whitespace(char *str)
 {
     if (!str)
         return str;
@@ -94,7 +94,7 @@ char *strip_whitespace(char *str)
         ++idx;
 
     if (!str[idx])
-        return str;
+        return str + idx;
 
     size_t tmp = strlen(str) - 1;
     while (is_whitespace(str[tmp]))

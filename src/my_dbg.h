@@ -2,6 +2,7 @@
 # define MY_DBG_H
 
 # include <stddef.h>
+# include <sys/types.h>
 
 # include "mapping.h"
 
@@ -10,12 +11,11 @@
 # define QUIT_MSG "quit"
 
 struct debug_infos {
-    char *const *args;
+    char **args;
     struct melf melf;
 };
 
-struct debug_infos *init_debug_infos(char *const *args, void *elf,
-                                     size_t size);
+struct debug_infos *init_debug_infos(char **args, void *elf, size_t size);
 
 /*
 ** \fn void empty_debug_infos(struct debug_infos *dinfos)

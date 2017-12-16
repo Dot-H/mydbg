@@ -3,6 +3,6 @@
 
 struct debug_infos;
 
-void trace_binary(struct debug_infos *dinfos);
+int trace_binary(struct debug_infos *dinfos);
 
 #endif /* !TRACE_H */

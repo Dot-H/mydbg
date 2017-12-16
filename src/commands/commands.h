@@ -48,7 +48,7 @@ struct command *find_command(const char *name);
 **
 ** \return Return the newly allocated name. If no name matches,
 ** return NULL.
-*/ 
+*/
 char *cmd_generator(const char *text, int state);
 
 int print_help(struct debug_infos *dinfos, const char *args[]);
