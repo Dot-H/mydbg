@@ -11,6 +11,11 @@
 ** Completion code adapted from http://www.delorie.com/gnu/docs/readline/rlman_48.html
 */
 
+static inline int is_whitespace(char c)
+{
+    return c == '\t' || c == '\n' || c == ' ' || c == '\r';
+}
+
 static char *get_home(const char *str)
 {
     static char *home = NULL;
@@ -58,8 +63,9 @@ static void update_history(int ret, void *ptr_home_hist)
 */
 static char **completion(const char *text, int start, int end)
 {
-    (void)end;
     char **matches = NULL;
+    (void)end;
+
     if (start == 0)
         matches = rl_completion_matches(text, cmd_generator);
 
@@ -78,13 +84,7 @@ void init_interaction(void)
     rl_attempted_completion_function = completion;
 }
 
-#if 0
-static inline int is_whitespace(char c)
-{
-    return c == '\t' || c == '\n' || c == ' ' || c == '\r';
-}
-
-static char *strip_whitespace(char *str)  
+char *strip_whitespace(char *str)  
 {
     if (!str)
         return str;
@@ -100,10 +100,9 @@ static char *strip_whitespace(char *str)
     while (is_whitespace(str[tmp]))
         --tmp;
 
-    str[tmp] = '\0';
+    str[tmp + 1] = '\0';
     return str + idx;
 }
-#endif
 
 char *get_line(void)
 {

@@ -43,14 +43,15 @@ static void interaction(struct debug_infos *dinfos)
 
     char *line = NULL;
     while ((line = get_line())) {
-        struct command *cmd = find_command(line);
+        char *stripped = strip_whitespace(line);
+        struct command *cmd = find_command(stripped);
         if (!cmd)
         {
             fprintf(stderr, "Command not found\n");
             ret = 1;
         }
         else
-            ret = cmd ->func(dinfos, NULL);
+            ret = cmd->func(dinfos, NULL);
 
         free(line);
     }

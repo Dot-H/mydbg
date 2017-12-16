@@ -3,28 +3,32 @@
 
 #include "commands.h"
 
+static inline int is_whitespace(char c)
+{
+    return c == '\t' || c == '\n' || c == ' ' || c == '\r';
+}
+
 char *cmd_generator(const char *text, int state)
 {
-    static int idx;
-    static int len;
+    static size_t idx;
+    static size_t len;
     char *name;
 
     /* If this is a new word to complete, initialize now.  This
-     includes saving the length of TEXT for efficiency, and
+     includes saving the length of TEXT for efficiency,
      initializing the index variable to 0. */
-    if (!state)
-    {
-      idx = 0;
-      len = strlen(text);
+    if (!state){
+        idx     = 0;
+        len = strlen(text);
     }
 
-    while ((name = __start_cmds[idx].name))
-    {
-      idx++;
+    while ((name = __start_cmds[idx].name)){
+     
+        idx++;
 
-      if (strncmp(name, text, len) == 0){
-        return strdup(name);
-      }
+        if (strncmp(name, text, len) == 0){
+              return strdup(name);
+        }
     }
 
     return NULL;
