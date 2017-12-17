@@ -9,7 +9,7 @@
 int load_file(struct debug_infos *dinfos, char *args[])
 {
     if (!args[1]){
-        fprintf(stderr, 
+        fprintf(stderr,
           "Need an argument. Type help file for further informations\n");
         return -1;
     }
