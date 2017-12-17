@@ -51,7 +51,7 @@ struct htable *dproc_htable_creat(void)
    return htable_creat(pid_hash, DPROC_HTABLE_SIZE, pid_cmp);
 }
 
-void dproc_htable_destroy(struct htable *htable)
+void dproc_htable_reset(struct htable *htable)
 {
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {
@@ -66,6 +66,13 @@ void dproc_htable_destroy(struct htable *htable)
             ++j;
         }
     }
+
+    htable->nmemb = 0;
+}
+
+void dproc_htable_destroy(struct htable *htable)
+{
+    dproc_htable_reset(htable);
 
     free(htable->array);
     free(htable);

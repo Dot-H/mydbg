@@ -1,4 +1,4 @@
-mydbg 0.1
+mydbg 0.3
 =========
 
 Description
@@ -9,21 +9,32 @@ Description
 Usage
 -----
 
-    In order to use the debugger, simply run the binary. If an
-    argument is provided, this must be a 64bits elf.
+    ./my_dbg [FILE]
+
+    In order to use the debugger, simply run the my_dbg binary. If
+    an argument is provided, this must be a 64bits elf. The argument
+    will become the working binary. If desired, it can be overloaded
+    via the file command.
 
     __Example:__
 
-        ./my_dbg elf
+        ./my_dbg super_program
 
 Commands
 --------
 
-    help    Print documentation for every command
-    quit    Quit mydbg
-    run     Run the currently loaded binary
-    info_process
-            Print all the running process
+    help    [CMD]   Print documentation for every command if no argument
+                    is specified. Otherwise, print the documentation of
+                    command in argument.
+
+    quit            Quit mydbg
+
+    run     [FILE]  Run the currently loaded binary if no argument given.
+                    Otherwise, the argument is loaded and run.
+
+    info_process    Print all the running process
+
+    file    FILE    Load binary given in argument.
 
 Return values
 -------------
@@ -35,7 +46,7 @@ Return values
 Notes
 -----
 
-    Array and lists are from "https://github.com/wayland-project/wayland".
+    Lists are from "https://github.com/wayland-project/wayland".
     Copyrights in wayland-util.h and wayland-util.c.
 
     A history file named .mydbg_history is written in $HOME. The name can

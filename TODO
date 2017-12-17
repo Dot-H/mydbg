@@ -3,16 +3,16 @@
 portability:
     [ ] 32bits elf support
 
-
 commands:
-    [ ] file
-    [ ] passing argument to run / file
+    [ ] passing argument to run
     [ ] replace binary by its absolute path
 
+signals:
+    [ ] send signal to the tracee
+    [ ] kill tracing when reseting binary or exiting
+
 global:
-    [ ] check for running process when quitting
+    [ ] check for running process before reset binary
 
 utils:
-    [ ] destroy list
-    [ ] destroy hash_table
     [ ] expand hash_table when necessary

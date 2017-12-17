@@ -8,20 +8,19 @@
 
 #include "my_dbg.h"
 #include "inputs.h"
-#include "mapping.h"
 #include "commands.h"
 #include "dproc.h"
 
 
-struct debug_infos *init_debug_infos(char **args, void *elf, size_t size)
+struct debug_infos *init_debug_infos(void)
 {
     struct debug_infos *dinfos = malloc(sizeof(struct debug_infos));
     if (!dinfos)
         err(1, "Cannot allocate struct debug_infos");
 
-    dinfos->melf.elf    = elf;
-    dinfos->melf.size   = (elf) ? size : 0;
-    dinfos->args        = args;
+    dinfos->melf.elf    = NULL;
+    dinfos->melf.size   = 0;
+    dinfos->args        = NULL;
     dinfos->dproc_table = dproc_htable_creat();
 
     return dinfos;
@@ -29,17 +28,19 @@ struct debug_infos *init_debug_infos(char **args, void *elf, size_t size)
 
 void empty_debug_infos(struct debug_infos *dinfos)
 {
-    if (munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
+    if (dinfos->melf.elf && munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
-    dproc_htable_destroy(dinfos->dproc_table);
-    memset(dinfos, 0, sizeof(struct debug_infos));
-    dinfos->dproc_table = dproc_htable_creat();
+    dproc_htable_reset(dinfos->dproc_table);
+
+    dinfos->args      = NULL;
+    dinfos->melf.elf  = NULL;
+    dinfos->melf.size = 0;
 }
 
 void destroy_debug_infos(struct debug_infos *dinfos)
 {
-    if (munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
+    if (dinfos->melf.elf && munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
     dproc_htable_destroy(dinfos->dproc_table);
@@ -77,17 +78,14 @@ cont_free:
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2){
+    if (argc > 2){
         fprintf(stderr, "Usage: ./my_dbg elf\n");
         return 2;
     }
 
-    size_t size = 0;
-    void *elf = map_elf(argv[1], &size);
-    if (!elf)
-        return 1;
-
-    struct debug_infos *dinfos = init_debug_infos(argv + 1, elf, size);
+    struct debug_infos *dinfos = init_debug_infos();
+    if (argc == 2)
+        load_file(dinfos, argv);
 
     int ret = 0;
     pid_t fk = fork();

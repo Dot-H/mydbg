@@ -9,6 +9,7 @@ include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
 
 set(SRC
         src/commands/commands.c
+        src/commands/file.c
         src/commands/help.c
         src/commands/info_process.c
         src/commands/quit.c

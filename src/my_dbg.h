@@ -18,7 +18,7 @@ struct debug_infos {
     struct htable *dproc_table; /* Hash table containing running process */
 };
 
-struct debug_infos *init_debug_infos(char **args, void *elf, size_t size);
+struct debug_infos *init_debug_infos(void);
 
 /*
 ** \fn void empty_debug_infos(struct debug_infos *dinfos)

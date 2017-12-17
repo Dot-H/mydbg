@@ -32,6 +32,23 @@ void init_interaction(void);
 */
 char **build_args(char *text);
 
+/**
+** \param args Null terminated array to duplicate
+**
+** \brief Duplicate \p args
+**
+** \return Returns the newly allocated array of allocated
+** strings
+*/
+char **dup_args(char *args[]);
+
+/**
+** \param args Null terminated array to destroy
+**
+** \brief Free all the allocated memory inside \p args. Including args
+*/
+void destroy_args(char **args);
+
 char *get_line(void);
 
 #endif /* !INPUTS_H */

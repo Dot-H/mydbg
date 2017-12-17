@@ -51,4 +51,6 @@ struct command *find_command(const char *name);
 */
 char *cmd_generator(const char *text, int state);
 
+int load_file(struct debug_infos *dinfos, char *args[]);
+
 #endif /* !COMMANDS_H */

@@ -143,3 +143,44 @@ char *get_line(void)
 
     return line;
 }
+
+static char *copy_arg(char *arg)
+{
+    if (!arg)
+        return NULL;
+
+    size_t len = 0;
+    while (arg[len] && !is_whitespace(arg[len]))
+        ++len;
+
+    char *copy = malloc(len + 1);
+    strncpy(copy, arg, len);
+    copy[len] = '\0';
+
+    return copy;
+}
+
+char **dup_args(char *args[])
+{
+    size_t len = 0;
+    for (char **tmp = args; *tmp; ++tmp)
+        ++len;
+
+    char **dup = malloc((len + 1)* sizeof(char *));
+    if (!dup)
+        err(1, "Failed to allocated args duplicate");
+
+    for (size_t i = 0; i < len; ++i)
+        dup[i] = copy_arg(args[i]);
+
+    dup[len] = NULL;
+    return dup;
+}
+
+void destroy_args(char **args)
+{
+    for (char **tmp = args; *tmp; ++tmp)
+        free(*tmp);
+
+    free(args);
+}
