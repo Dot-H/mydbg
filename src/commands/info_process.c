@@ -31,6 +31,7 @@ int print_process(struct debug_infos *dinfos, char *args[])
         }
     }
 
+    printf("Actual default process: %d", dinfos->dflt_pid);
     return 0;
 }
 

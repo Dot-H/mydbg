@@ -4,19 +4,23 @@
 
 #include "dproc.h"
 
-struct dproc *dproc_creat(pid_t pid, int status)
+struct dproc *dproc_creat(void)
 {
-    struct dproc *new = malloc(sizeof(struct dproc));
+    struct dproc *new = calloc(1, sizeof(struct dproc));
     if (!new)
         err(1, "Cannot allocate space for struct dproc");
 
-    new->pid    = pid;
-    new->status = status;
+    new->unw.as = unw_create_addr_space(&_UPT_accessors, 0);
     return new;
 }
 
 void dproc_destroy(struct dproc *proc)
 {
+    if (proc->unw.ui)
+        _UPT_destroy(proc->unw.ui);
+    if (proc->unw.as)
+        unw_destroy_addr_space(proc->unw.as);
+
     free(proc);
 }
 

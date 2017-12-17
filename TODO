@@ -1,5 +1,10 @@
 ## my_dbg TODO
 
+IMPORTANT:
+    [ ] Quiting properly
+        [ ] Wait for the child
+        [ ] PTRACE_DETACH
+
 portability:
     [ ] 32bits elf support
 
@@ -13,6 +18,7 @@ signals:
 
 global:
     [ ] check for running process before reset binary
+    [ ] status printer [replace in all printf(.*proc->status.*]
 
 utils:
     [ ] expand hash_table when necessary

@@ -1,16 +1,29 @@
 #ifndef DPROC_H
 # define DPROC_H
 
+# include <libunwind.h>
+# include <libunwind-x86_64.h>
+# include <libunwind-ptrace.h>
 # include <stddef.h>
+# include <signal.h>
 # include <sys/types.h>
 
 # include "hash_table.h"
 
 # define DPROC_HTABLE_SIZE 10
 
+struct unwind {
+    struct UPT_info *ui;
+    unw_cursor_t c;
+    unw_accessors_t ap;
+    unw_addr_space_t as;
+};
+
 struct dproc {
    pid_t pid;
    int status;
+   siginfo_t siginfo;
+   struct unwind unw;
 };
 
 /**
@@ -18,7 +31,7 @@ struct dproc {
 **
 ** \return Return the newly allocated dproc
 */
-struct dproc *dproc_creat(pid_t pid, int status);
+struct dproc *dproc_creat(void);
 
 /**
 ** \brief Free all the allocated memory inside \p htable and reset

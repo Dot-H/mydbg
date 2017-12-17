@@ -27,7 +27,7 @@ static void print_status(pid_t pid, int status)
                 pid, status);
 }
 
-int trace_binary(struct debug_infos *dinfos, int *status)
+int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
 {
     if (!dinfos->melf.elf)
         return -1;
@@ -45,8 +45,19 @@ int trace_binary(struct debug_infos *dinfos, int *status)
         goto err_print_errno;
     }
 
-    waitpid(pid, status, 0);
-    print_status(pid, *status);
+    waitpid(pid, &proc->status, 0);
+    print_status(pid, proc->status);
+
+    proc->unw.ui = _UPT_create(pid);
+    if (!proc->unw.ui) {
+        fprintf(stderr, "_UPT_create failed\n");
+        goto err_empty_dinfos;
+    }
+
+    if (ptrace(PTRACE_GETSIGINFO, pid, 0, &proc->siginfo) == -1)
+        warn("Failed to recover siginfo from %d", pid);
+
+    proc->pid = pid;
     return pid;
 
 err_empty_dinfos:

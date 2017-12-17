@@ -15,6 +15,7 @@ struct debug_infos {
     char **args;
     struct melf melf;
 
+    pid_t  dflt_pid; /* Current default pid */
     struct htable *dproc_table; /* Hash table containing running process */
 };
 

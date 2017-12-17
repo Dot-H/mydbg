@@ -9,25 +9,31 @@
 int do_run(struct debug_infos *dinfos, char *args[])
 {
     (void)args;
-    int status;
-    int ret = -1;
+    struct dproc *proc = dproc_creat();  
+
+    pid_t pid = -1;
     if (dinfos->melf.elf){
-        ret = trace_binary(dinfos, &status);
-        if (ret == -1)
-            return -1;
+        pid = trace_binary(dinfos, proc);
+        if (pid == -1)
+            goto out_destroy_proc;
     }
     else{
         fprintf(stderr, "No executable loaded\n");
-        return -1;
+        goto out_destroy_proc;
     }
 
-    if (WIFEXITED(status))
-        return ret;
+    if (WIFEXITED(proc->status))
+        goto out_destroy_proc;
 
-    struct dproc *new = dproc_creat(ret, status);
-    dproc_htable_insert(new, dinfos->dproc_table);
+    proc->pid = pid;
+    dproc_htable_insert(proc, dinfos->dproc_table);
+    dinfos->dflt_pid = pid;
 
-    return ret;
+    return pid;
+
+out_destroy_proc:
+    dproc_destroy(proc);
+    return pid;
 }
 
 shell_cmd(run, do_run, "Start debugged program");
