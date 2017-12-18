@@ -1,6 +1,8 @@
 #include <err.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/wait.h>
 
 #include "dproc.h"
 
@@ -16,10 +18,19 @@ struct dproc *dproc_creat(void)
 
 void dproc_destroy(struct dproc *proc)
 {
+    if (!proc)
+        return;
+
     if (proc->unw.ui)
         _UPT_destroy(proc->unw.ui);
     if (proc->unw.as)
         unw_destroy_addr_space(proc->unw.as);
+
+    if (kill(proc->pid, SIGKILL) == -1)
+        warn("Failed to sigkill %d", proc->pid);
+
+    if (waitpid(proc->pid, NULL, 0) == -1)
+        warn("Failed to wait %d", proc->pid);
 
     free(proc);
 }
@@ -59,9 +70,9 @@ void dproc_htable_reset(struct htable *htable)
 {
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {
-        struct wl_list head = htable->array[i].link;
-        struct data *pos    = wl_container_of(head.next, pos, link);
-        while (&pos->link != &head)
+        struct wl_list *head = &htable->array[i].link;
+        struct data *pos    = wl_container_of(head->next, pos, link);
+        while (&pos->link != head)
         {
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);

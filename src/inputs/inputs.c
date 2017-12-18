@@ -166,7 +166,7 @@ char **dup_args(char *args[])
     for (char **tmp = args; *tmp; ++tmp)
         ++len;
 
-    char **dup = malloc((len + 1)* sizeof(char *));
+    char **dup = malloc((len + 1) * sizeof(char *));
     if (!dup)
         err(1, "Failed to allocated args duplicate");
 
@@ -179,6 +179,9 @@ char **dup_args(char *args[])
 
 void destroy_args(char **args)
 {
+    if (!args)
+        return;
+
     for (char **tmp = args; *tmp; ++tmp)
         free(*tmp);
 

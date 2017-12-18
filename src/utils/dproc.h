@@ -2,7 +2,7 @@
 # define DPROC_H
 
 # include <libunwind.h>
-# include <libunwind-x86_64.h>
+# include <libunwind-x86.h>
 # include <libunwind-ptrace.h>
 # include <stddef.h>
 # include <signal.h>

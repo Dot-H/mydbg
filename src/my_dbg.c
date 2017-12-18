@@ -32,6 +32,7 @@ void empty_debug_infos(struct debug_infos *dinfos)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
     dproc_htable_reset(dinfos->dproc_table);
+    destroy_args(dinfos->args);
 
     dinfos->args      = NULL;
     dinfos->melf.elf  = NULL;
@@ -43,7 +44,7 @@ void destroy_debug_infos(struct debug_infos *dinfos)
     if (dinfos->melf.elf && munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
-    dproc_htable_destroy(dinfos->dproc_table);
+    empty_debug_infos(dinfos);
     free(dinfos);
 }
 
@@ -72,6 +73,7 @@ cont_free:
         free(line);
     }
 
+    destroy_debug_infos(dinfos);
     fprintf(stderr, QUIT_MSG"\n");
     return ret;
 }

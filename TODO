@@ -1,10 +1,5 @@
 ## my_dbg TODO
 
-IMPORTANT:
-    [ ] Quiting properly
-        [ ] Wait for the child
-        [ ] PTRACE_DETACH
-
 portability:
     [ ] 32bits elf support
 
@@ -12,12 +7,9 @@ commands:
     [ ] passing argument to run
     [ ] replace binary by its absolute path
 
-signals:
-    [ ] send signal to the tracee
-    [ ] kill tracing when reseting binary or exiting
-
 global:
     [ ] check for running process before reset binary
+        [ ] Ask "want to kill %d process" when quit / file / run arg 
     [ ] status printer [replace in all printf(.*proc->status.*]
 
 utils:
