@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(MY_DBG C)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -D_DEFAULT_SOURCE \
-        -DDEBUG -lunwind-ptrace -lunwind-x86_64 -lunwind")#-fsanitize=address")
+        -lunwind-ptrace -lunwind-x86_64 -lunwind")#-fsanitize=address")
 include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
         src/tracing" "src/utils")
 
