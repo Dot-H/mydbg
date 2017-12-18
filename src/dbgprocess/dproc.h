@@ -22,7 +22,7 @@ struct unwind {
 struct dproc {
    pid_t pid;
    int status;
-   siginfo_t siginfo;
+   siginfo_t siginfo; /* Last signal received by \p pid */
    struct unwind unw;
 };
 

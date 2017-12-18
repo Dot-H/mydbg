@@ -9,6 +9,7 @@
 #include "my_dbg.h"
 #include "inputs.h"
 #include "commands.h"
+#include "breakpoint.h"
 #include "dproc.h"
 
 
@@ -22,6 +23,7 @@ struct debug_infos *init_debug_infos(void)
     dinfos->melf.size   = 0;
     dinfos->args        = NULL;
     dinfos->dproc_table = dproc_htable_creat();
+    dinfos->bp_table    = bp_htable_creat();
 
     return dinfos;
 }
@@ -32,6 +34,7 @@ void empty_debug_infos(struct debug_infos *dinfos)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
     dproc_htable_reset(dinfos->dproc_table);
+    bp_htable_reset(dinfos->bp_table);
     destroy_args(dinfos->args);
 
     dinfos->args      = NULL;

@@ -9,7 +9,7 @@
 int do_run(struct debug_infos *dinfos, char *args[])
 {
     (void)args;
-    struct dproc *proc = dproc_creat();  
+    struct dproc *proc = dproc_creat();
 
     pid_t pid = -1;
     if (dinfos->melf.elf){

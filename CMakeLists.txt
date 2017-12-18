@@ -9,6 +9,7 @@ include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
 
 set(SRC
         src/breakpoint/breakpoint.c
+        src/commands/break.c
         src/commands/commands.c
         src/commands/file.c
         src/commands/help.c

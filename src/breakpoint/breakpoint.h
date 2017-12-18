@@ -2,7 +2,7 @@
 # define BREAKPOINT_H
 
 #define BP_HTABLE_SIZE 128
-#define BP_OPCODE 0xcc
+#define BP_OPCODE (0xcc)
 
 enum bp_type {
     BP_CLASSIC,
@@ -13,11 +13,12 @@ enum bp_type {
 struct breakpoint {
     enum bp_type type;
     unsigned id; /* A bp has no id while it is not in the bp table */
-
-    size_t count; /* Nb of time breakpoint has been hit */
+    pid_t a_pid; /* Associated pid */
+    int is_enabled;
 
     void *addr; /* Address of the replaced instruction / breakpoint */
-    char sv_instr; /* Saved instruction */
+    long sv_instr; /* Saved instruction */
+    size_t count; /* Nb of time breakpoint has been hit */
 };
 
 /**

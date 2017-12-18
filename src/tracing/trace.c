@@ -68,3 +68,22 @@ err_print_errno:
         exit(1);
     return -1;
 }
+
+char set_opcode(pid_t pid, long opcode, void *addr)
+{
+    long saved_data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
+    if (saved_data == -1) {
+        warn("Failed to PEEKTEXT %d at %p", pid, addr);
+        return -1;
+    }
+
+    printf("peeked %lx\n", saved_data);
+
+    long new_data = ((saved_data & ~(0xff)) | opcode);
+    if (ptrace(PTRACE_POKETEXT, pid, addr, new_data) == -1) {
+        warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr); 
+        return -1;
+    }
+
+    return saved_data & 0xff;
+}
