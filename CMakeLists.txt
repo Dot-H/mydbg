@@ -5,9 +5,10 @@ set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -D_DEFAULT_SOURCE \
         -lunwind-ptrace -lunwind-x86_64 -lunwind")#-fsanitize=address")
 include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
-        src/tracing" "src/utils")
+        src/tracing" "src/utils" "src/dbgprocess" "src/breakpoint")
 
 set(SRC
+        src/breakpoint/breakpoint.c
         src/commands/commands.c
         src/commands/file.c
         src/commands/help.c
@@ -15,11 +16,11 @@ set(SRC
         src/commands/info_regs.c
         src/commands/quit.c
         src/commands/run.c
+        src/dbgprocess/dproc.c
         src/inputs/inputs.c
         src/my_dbg.c
         src/opening/mapping.c
         src/tracing/trace.c
-        src/utils/dproc.c
         src/utils/hash_table.c
         src/utils/wayland-util.c
   )
