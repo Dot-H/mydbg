@@ -21,6 +21,13 @@ void print_status(pid_t, int *status);
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc);
 
 /*
+** \brief Wait for the tracee described by \prof to receive a signal.
+** When a signaled is received, proc is filled with the signal info-
+** rmations.
+*/
+void wait_tracee(struct dproc *proc);
+
+/*
 ** \brief Replace opcode at \p addr in \p pid by \opcode.
 **
 ** \return Return the old opcode on success and -1 on failure

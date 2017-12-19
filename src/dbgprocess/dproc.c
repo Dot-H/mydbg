@@ -76,6 +76,8 @@ void dproc_htable_reset(struct htable *htable)
         {
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
+
+            wl_list_remove(&pos->link);
             dproc_destroy(tmp->value);
             free(tmp);
             ++j;

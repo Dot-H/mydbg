@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/wait.h>
@@ -17,10 +18,17 @@ static void *get_addr(struct debug_infos *dinfos, char *args[])
         bp_addr = proc->siginfo.si_addr;
     }
     else {
+        char *endptr = NULL;
         bp_addr = (void *)strtol(args[1], NULL, 16);
+        if (endptr || errno == ERANGE)
+            goto err_invalid_arg;
     }
 
     return bp_addr;
+
+err_invalid_arg:
+    fprintf(stderr, "Invalid argument(s)\n");
+    return NULL;
 }
 
 int do_break(struct debug_infos *dinfos, char *args[])
@@ -55,4 +63,4 @@ out_destroy_bp:
     return -1;
 }
 
-shell_cmd(break, do_break, "Start debugged program");
+shell_cmd(break, do_break, "Put a breakpoint on the address given in argument");

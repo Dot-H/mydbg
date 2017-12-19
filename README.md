@@ -27,14 +27,26 @@ Commands
                     is specified. Otherwise, print the documentation of
                     command in argument.
 
-    quit            Quit mydbg
+    quit            Quit mydbg.
 
     run     [FILE]  Run the currently loaded binary if no argument given.
                     Otherwise, the argument is loaded and run.
 
-    info_process    Print all the running process
+    info_process    Print all the running process.
+
+    info_regs       Print the registers of the current process
+
+    info_header     Print the elf header of the current loaded file
 
     file    FILE    Load binary given in argument.
+
+    break   [ADDR]  Put a breakpoint on the address in argument if any and
+                    on the current address otherwise.
+
+    continue
+            [PID]   Continue the execution of the pid given in argument.
+
+    
 
 Return values
 -------------

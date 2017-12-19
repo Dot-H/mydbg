@@ -27,6 +27,15 @@ static void print_status(pid_t pid, int status)
                 pid, status);
 }
 
+void wait_tracee(struct dproc *proc)
+{
+    waitpid(proc->pid, &proc->status, 0);
+    print_status(proc->pid, proc->status);
+
+    if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
+        warn("Failed to recover siginfo from %d", proc->pid);
+}
+
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
 {
     if (!dinfos->melf.elf)
@@ -45,8 +54,9 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
         goto err_print_errno;
     }
 
-    waitpid(pid, &proc->status, 0);
-    print_status(pid, proc->status);
+    proc->pid = pid;
+
+    wait_tracee(proc);
 
     proc->unw.ui = _UPT_create(pid);
     if (!proc->unw.ui) {
@@ -54,10 +64,6 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
         goto err_empty_dinfos;
     }
 
-    if (ptrace(PTRACE_GETSIGINFO, pid, 0, &proc->siginfo) == -1)
-        warn("Failed to recover siginfo from %d", pid);
-
-    proc->pid = pid;
     return pid;
 
 err_empty_dinfos:

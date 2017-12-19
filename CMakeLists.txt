@@ -11,10 +11,12 @@ set(SRC
         src/breakpoint/breakpoint.c
         src/commands/break.c
         src/commands/commands.c
+        src/commands/continue.c
         src/commands/file.c
         src/commands/help.c
         src/commands/info_process.c
         src/commands/info_regs.c
+        src/commands/info_header.c
         src/commands/quit.c
         src/commands/run.c
         src/dbgprocess/dproc.c

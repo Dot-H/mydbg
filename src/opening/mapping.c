@@ -52,23 +52,6 @@ static int tst_elf(const char *file, Elf64_Ehdr *header, size_t size)
         }
     }
 
-#ifdef DEBUG
-    const char *type = "ET_NONE";
-    if (header->e_type == ET_DYN) type = "ET_DYN";
-    else if (header->e_type == ET_REL) type = "ET_REL";
-    else if (header->e_type == ET_EXEC) type = "ET_EXEC";
-    else if (header->e_type == ET_CORE) type = "ET_CORE";
-    printf("type: %s\n", type);
-    printf("entrypoint: %lx\n", header->e_entry);
-    printf("header's size: %hu\n", header->e_ehsize);
-    printf("phentsize: %hu\n", header->e_phentsize);
-    printf("phnum: %hu\n", header->e_phnum);
-    printf("shentsize: %hu\n", header->e_shentsize);
-    printf("shnum: %hu\n", header->e_shnum);
-    printf("shstrnidx: %hu\n", header->e_shentsize);
-    fflush(stdout);
-#endif
-
     return header->e_machine == EM_X86_64;
 }
 

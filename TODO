@@ -6,6 +6,7 @@ portability:
 commands:
     [ ] passing argument to run
     [ ] replace binary by its absolute path
+    [ ] add pid argument to break
 
 global:
     [ ] check for running process before reset binary

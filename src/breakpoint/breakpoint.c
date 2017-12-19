@@ -65,6 +65,8 @@ void bp_htable_reset(struct htable *htable)
         {
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
+            wl_list_remove(&pos->link);
+
             bp_destroy(tmp->value);
             free(tmp);
             ++j;
@@ -72,6 +74,7 @@ void bp_htable_reset(struct htable *htable)
     }
 
     htable->nmemb = 0;
+    bp_id         = 0;
 }
 
 void bp_htable_destroy(struct htable *htable)
