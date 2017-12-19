@@ -32,7 +32,7 @@ err_invalid_arg:
 }
 
 
-int do_continue(struct debug_infos *dinfos, char *args[])
+int do_singlestep(struct debug_infos *dinfos, char *args[])
 {
     if (!dinfos->melf.elf || !dinfos->dflt_pid) {
         fprintf(stderr, "No running process\n");
@@ -44,7 +44,7 @@ int do_continue(struct debug_infos *dinfos, char *args[])
         return -1;
 
     int ret = -1;
-    if ((ret = ptrace(PTRACE_CONT, proc->pid, 0, 0) == -1))
+    if ((ret = ptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0) == -1))
         warn("Could not resume the execution of %d", proc->pid);
 
     wait_tracee(proc);
@@ -52,4 +52,4 @@ int do_continue(struct debug_infos *dinfos, char *args[])
     return ret;
 }
 
-shell_cmd(continue, do_continue, "Continue the execution of a process");
+shell_cmd(singlestep, do_singlestep, "Execute a unique instruction");

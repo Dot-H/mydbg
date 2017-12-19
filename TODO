@@ -10,8 +10,11 @@ commands:
 
 global:
     [ ] check for running process before reset binary
-        [ ] Ask "want to kill %d process" when quit / file / run arg 
-    [ ] status printer [replace in all printf(.*proc->status.*]
+        [ ] Ask "want to kill %d process" when quit / file / run arg
+    [ ] hit breakpoint handler on SIGTRAP
+        [ ] check for known breakpoint
+        [ ] increment count
+        [ ] hit breakpoint print
 
 utils:
     [ ] expand hash_table when necessary

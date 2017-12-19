@@ -7,6 +7,7 @@
 # include <stddef.h>
 # include <signal.h>
 # include <sys/types.h>
+# include <sys/wait.h>
 
 # include "hash_table.h"
 
@@ -34,16 +35,23 @@ struct dproc {
 struct dproc *dproc_creat(void);
 
 /**
+** \brief Free all the allocated memory inside \p proc and \p proc
+** itself.
+*/
+void dproc_destroy(struct dproc *proc);
+
+/**
 ** \brief Free all the allocated memory inside \p htable and reset
 **  all its attributes.
 */
 void dproc_htable_reset(struct htable *htable);
 
-/**
-** \brief Free all the allocated memory inside \p proc and \p proc
-** itself.
+/*
+** \return Returns a positive value if the process is finished
+** either by a normal exit or by a signal and 0 if the process
+** is still running.
 */
-void dproc_destroy(struct dproc *proc);
+int is_finished(struct dproc *proc);
 
 /****************************************/
 /*      Wrappers to struct htable       */

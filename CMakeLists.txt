@@ -19,6 +19,7 @@ set(SRC
         src/commands/info_header.c
         src/commands/quit.c
         src/commands/run.c
+        src/commands/singlestep.c
         src/dbgprocess/dproc.c
         src/inputs/inputs.c
         src/my_dbg.c

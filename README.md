@@ -46,7 +46,8 @@ Commands
     continue
             [PID]   Continue the execution of the pid given in argument.
 
-    
+    singlestep
+            [PID]   Execute a unique instruction
 
 Return values
 -------------

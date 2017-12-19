@@ -39,7 +39,7 @@ int do_break(struct debug_infos *dinfos, char *args[])
     }
 
     void *bp_addr         = get_addr(dinfos, args);
-    struct breakpoint *bp = bp_creat(BP_CLASSIC);  
+    struct breakpoint *bp = bp_creat(BP_CLASSIC);
 
     bp->sv_instr = set_opcode(dinfos->dflt_pid, 0xcc, bp_addr);
     if (bp->sv_instr == -1)

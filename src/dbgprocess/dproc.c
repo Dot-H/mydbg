@@ -6,6 +6,16 @@
 
 #include "dproc.h"
 
+static void kill_process(pid_t pid)
+{
+    if (kill(pid, SIGKILL) == -1)
+        warn("Failed to sigkill %d", pid);
+
+    if (waitpid(pid, NULL, 0) == -1)
+        warn("Failed to wait %d", pid);
+
+}
+
 struct dproc *dproc_creat(void)
 {
     struct dproc *new = calloc(1, sizeof(struct dproc));
@@ -26,13 +36,15 @@ void dproc_destroy(struct dproc *proc)
     if (proc->unw.as)
         unw_destroy_addr_space(proc->unw.as);
 
-    if (kill(proc->pid, SIGKILL) == -1)
-        warn("Failed to sigkill %d", proc->pid);
-
-    if (waitpid(proc->pid, NULL, 0) == -1)
-        warn("Failed to wait %d", proc->pid);
+    if (!is_finished(proc))
+        kill_process(proc->pid);
 
     free(proc);
+}
+
+int is_finished(struct dproc *proc)
+{
+    return WIFEXITED(proc->status) && WIFSIGNALED(proc->status);
 }
 
 /**

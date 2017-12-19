@@ -36,7 +36,7 @@ void wait_tracee(struct dproc *proc)
     waitpid(proc->pid, &proc->status, 0);
     print_status(proc->pid, proc->status);
 
-    if (!WIFEXITED(proc->status) && !WIFSIGNALED(proc->status))
+    if (!is_finished(proc))
         if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
             warn("Failed to recover siginfo from %d", proc->pid);
 }
@@ -92,7 +92,7 @@ char set_opcode(pid_t pid, long opcode, void *addr)
 
     long new_data = ((saved_data & ~(0xff)) | opcode);
     if (ptrace(PTRACE_POKETEXT, pid, addr, new_data) == -1) {
-        warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr); 
+        warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr);
         return -1;
     }
 
