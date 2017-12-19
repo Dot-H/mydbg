@@ -1,6 +1,7 @@
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -11,16 +12,19 @@
 static void print_status(pid_t pid, int status)
 {
     if (WIFEXITED(status))
-        fprintf(stderr, "%d exited normally with code %d\n", pid, status);
-
-    else if (WIFSIGNALED(status))
-        fprintf(stderr, "%d terminates by signal %d\n", pid, status);
-
-    else if (WIFSTOPPED(status))
-        fprintf(stderr, "%d stopped by signal %d\n", pid, status);
+        fprintf(stderr, "%d exited normally with code %d\n", pid,
+                WEXITSTATUS(status));
 
     else if (WIFCONTINUED(status))
         fprintf(stderr, "%d continued\n", pid);
+
+    else if (WIFSIGNALED(status))
+        fprintf(stderr, "%d terminates by signal %s\n", pid,
+                strsignal(WSTOPSIG(status)));
+
+    else if (WIFSTOPPED(status))
+        fprintf(stderr, "%d stopped by signal %s\n", pid,
+                strsignal(WSTOPSIG(status)));
 
     else
         fprintf(stderr, "%d has received an unknown signal. status: %d\n",
@@ -32,8 +36,9 @@ void wait_tracee(struct dproc *proc)
     waitpid(proc->pid, &proc->status, 0);
     print_status(proc->pid, proc->status);
 
-    if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
-        warn("Failed to recover siginfo from %d", proc->pid);
+    if (!WIFEXITED(proc->status) && !WIFSIGNALED(proc->status))
+        if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
+            warn("Failed to recover siginfo from %d", proc->pid);
 }
 
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
