@@ -46,8 +46,8 @@ int do_singlestep(struct debug_infos *dinfos, char *args[])
     int ret = -1;
     if ((ret = ptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0) == -1))
         warn("Could not resume the execution of %d", proc->pid);
-
-    wait_tracee(proc);
+    else
+        wait_tracee(dinfos, proc);
 
     return ret;
 }

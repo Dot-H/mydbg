@@ -40,13 +40,13 @@ int do_break(struct debug_infos *dinfos, char *args[])
 
     void *bp_addr         = get_addr(dinfos, args);
     struct breakpoint *bp = bp_creat(BP_CLASSIC);
+    bp->a_pid             = dinfos->dflt_pid;
 
-    bp->sv_instr = set_opcode(dinfos->dflt_pid, 0xcc, bp_addr);
+    bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
     if (bp->sv_instr == -1)
         goto out_destroy_bp;
 
     bp->addr       = bp_addr;
-    bp->a_pid      = dinfos->dflt_pid;
     bp->is_enabled = 1;
 
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)

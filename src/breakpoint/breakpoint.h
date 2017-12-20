@@ -1,13 +1,25 @@
 #ifndef BREAKPOINT_H
 # define BREAKPOINT_H
 
-#define BP_HTABLE_SIZE 128
-#define BP_OPCODE (0xcc)
+# include <stddef.h>
+# include <sys/types.h>
 
+# include "dproc.h"
+# include "hash_table.h"
+# include "my_dbg.h"
+
+#define TRAP_BRKPT 1
+#define BP_HTABLE_SIZE 128
+#define BP_OPCODE 0xcc
+
+/**
+** \param BP_RESET used to a breakpoint previously hit. When a BP_RESET
+** is hit, it puts a BP_OPCODE on its addr - 1 and destroys itself.
+*/
 enum bp_type {
-    BP_CLASSIC,
-    BP_TEMPORARY,
-    BP_HARDWARE,
+    BP_CLASSIC = 0,
+    BP_TEMPORARY = 1,
+    BP_RESET = 2,
 };
 
 struct breakpoint {
@@ -35,10 +47,43 @@ struct breakpoint *bp_creat(enum bp_type);
 void bp_htable_reset(struct htable *htable);
 
 /**
-** \brief Free all the allocated memory inside \p bp and \p bp
+** \brief Reset the opcode at the address of \p bp before
+** freeing all the allocated memory inside \p bp and \p bp
 ** itself.
+**
+** \return Returns -1 if the function failed to reset the opcode
+** at the address of \p bp and 0 otherwise.
+**
+** \note In case of error, a message is print on stderr and
+** \p bp has not been destroyed.
 */
-void bp_destroy(struct breakpoint *bp);
+int bp_destroy(struct breakpoint *bp);
+
+/**
+** \param dinfos Envirnment containing the breakpoint table.
+** \param proc Process whose received the SIGTRAP
+**
+** \brief Search for the breakpoint which could haved caused the
+** SIGTRAP received by \p proc. If found, the saved instruction
+** is execute and the breakpoint is actualized.
+** 
+** \return Returns 0 if a breakpoint has been found and everything
+** went fine. Otherwise -1 is returned.
+** 
+** \note If a breakpoint is found but the routine failed, an error
+** is print on stderr and -1 is returned.
+*/
+int bp_hit(struct debug_infos *dinfos, struct dproc *proc);
+
+/**
+** \brief Creates a reset breakpoint from \p bp and insert it both
+** in the process \proc and in \p htable.
+**
+** \return return a positive value on success and -1 on error.
+**
+** \note In case of error, a message is print on stderr.
+*/
+int bp_create_reset(struct htable *htable, struct breakpoint *bp);
 
 /****************************************/
 /*      Wrappers to struct htable       */
@@ -61,7 +106,5 @@ struct breakpoint *bp_htable_get(void *addr, struct htable *htable);
 void bp_htable_remove(struct breakpoint *bp, struct htable *htable);
 
 int bp_htable_insert(struct breakpoint *bp, struct htable *htable);
-
-
 
 #endif /* !BREAKPOINT_H */

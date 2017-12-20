@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "my_dbg.h"
 #include "breakpoint.h"
+#include "my_dbg.h"
+#include "trace.h"
 
 static size_t bp_id = 1;
 
@@ -12,18 +13,48 @@ struct breakpoint *bp_creat(enum bp_type type)
 {
     struct breakpoint *new = calloc(1, sizeof(struct breakpoint));
     if (!new)
-        err(1, "Cannot allocate space for struct breakpoint");
+        err(1, "Cannot allocate memory for struct breakpoint");
 
     new->type = type;
     return new;
 }
 
-void bp_destroy(struct breakpoint *bp)
+int bp_destroy(struct breakpoint *bp)
 {
     if (!bp)
-        return;
+        return -1;
+
+    if (bp->sv_instr && set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
+        return -1;
 
     free(bp);
+    return 0;
+}
+
+int bp_create_reset(struct htable *htable, struct breakpoint *bp)
+{
+    struct breakpoint *bp_rst = malloc(sizeof(struct breakpoint));
+    if (!bp_rst)
+        err(1, "Cannot allocate memory for reset breakpoint\n");
+
+    bp_rst->type       = BP_RESET;
+    bp_rst->a_pid      = bp->a_pid;
+    bp_rst->is_enabled = 1;
+
+    bp_rst->addr = (void *)((uintptr_t)bp->addr + 1);
+    bp_rst->sv_instr = set_opcode(bp_rst->a_pid, BP_OPCODE, bp_rst->addr);
+    if (bp_rst->sv_instr == -1)
+        goto out_destroy_bp_rst;
+
+    if (bp_htable_insert(bp_rst, htable) == -1)
+        goto out_destroy_bp_rst;
+
+    return 0;
+
+out_destroy_bp_rst:
+    fprintf(stderr, "Failed to create reset pointer");
+    bp_destroy(bp_rst);
+    return -1;
 }
 
 /**
@@ -65,16 +96,17 @@ void bp_htable_reset(struct htable *htable)
         {
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
-            wl_list_remove(&pos->link);
 
-            bp_destroy(tmp->value);
+            if (bp_destroy(tmp->value)) /* If it's fail, we are screwed */
+                wl_list_remove(&pos->link);
+
             free(tmp);
             ++j;
         }
     }
 
     htable->nmemb = 0;
-    bp_id         = 0;
+    bp_id         = 1;
 }
 
 void bp_htable_destroy(struct htable *htable)
@@ -98,14 +130,15 @@ void bp_htable_remove(struct breakpoint *bp, struct htable *htable)
 {
     struct data *poped = htable_pop(htable, bp->addr);
     if (!poped)
-        fprintf(stderr, "Failed to find %p in breakpoint hashtable\n", bp->addr);
+        fprintf(stderr, "Failed to find %p in htable\n", bp->addr);
 
+    bp_destroy(poped->value);
     free(poped);
 }
 
 int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
 {
-    int ret = htable_insert(htable, bp, &bp->addr);
+    int ret = htable_insert(htable, bp, bp->addr);
     if (ret == -1){
         fprintf(stderr, "Process %p is already present in the hashtable",
                 bp->addr);

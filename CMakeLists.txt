@@ -8,6 +8,7 @@ include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
         src/tracing" "src/utils" "src/dbgprocess" "src/breakpoint")
 
 set(SRC
+        src/breakpoint/bp_hit.c
         src/breakpoint/breakpoint.c
         src/commands/break.c
         src/commands/commands.c

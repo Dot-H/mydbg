@@ -122,6 +122,7 @@ void dproc_htable_remove(struct dproc *proc, struct htable *htable)
     if (!poped)
         fprintf(stderr, "Failed to find %d in dproc hashtable\n", proc->pid);
 
+    dproc_destroy(poped->value);
     free(poped);
 }
 

@@ -47,7 +47,7 @@ int do_continue(struct debug_infos *dinfos, char *args[])
     if ((ret = ptrace(PTRACE_CONT, proc->pid, 0, 0) == -1))
         warn("Could not resume the execution of %d", proc->pid);
 
-    wait_tracee(proc);
+    wait_tracee(dinfos, proc);
 
     return ret;
 }

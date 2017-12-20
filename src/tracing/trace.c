@@ -1,4 +1,5 @@
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,7 @@
 
 #include "my_dbg.h"
 #include "dproc.h"
+#include "breakpoint.h"
 
 static void print_status(pid_t pid, int status)
 {
@@ -31,14 +33,19 @@ static void print_status(pid_t pid, int status)
                 pid, status);
 }
 
-void wait_tracee(struct dproc *proc)
+void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
 {
     waitpid(proc->pid, &proc->status, 0);
     print_status(proc->pid, proc->status);
 
-    if (!is_finished(proc))
-        if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
-            warn("Failed to recover siginfo from %d", proc->pid);
+    if (is_finished(proc))
+        return;
+
+    if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
+        warn("Failed to recover siginfo from %d", proc->pid);
+
+    if (proc->siginfo.si_signo == SIGTRAP)
+        bp_hit(dinfos, proc);
 }
 
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
@@ -61,13 +68,15 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
 
     proc->pid = pid;
 
-    wait_tracee(proc);
 
     proc->unw.ui = _UPT_create(pid);
     if (!proc->unw.ui) {
         fprintf(stderr, "_UPT_create failed\n");
         goto err_empty_dinfos;
     }
+
+
+    wait_tracee(dinfos, proc);
 
     return pid;
 
@@ -84,12 +93,16 @@ char set_opcode(pid_t pid, long opcode, void *addr)
 {
     long saved_data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
     if (saved_data == -1) {
+        if (errno == ESRCH)
+            return 0;
+
         warn("Failed to PEEKTEXT %d at %p", pid, addr);
         return -1;
     }
 
     printf("peeked %lx\n", saved_data);
 
+    opcode &= 0xff;
     long new_data = ((saved_data & ~(0xff)) | opcode);
     if (ptrace(PTRACE_POKETEXT, pid, addr, new_data) == -1) {
         warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr);

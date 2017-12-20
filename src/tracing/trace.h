@@ -25,14 +25,15 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc);
 ** When a signaled is received, proc is filled with the signal info-
 ** rmations.
 */
-void wait_tracee(struct dproc *proc);
+void wait_tracee(struct debug_infos *dinfos, struct dproc *proc);
 
 /*
 ** \brief Replace opcode at \p addr in \p pid by \opcode.
 **
 ** \return Return the old opcode on success and -1 on failure
 **
+** \note If an error occurs, a message is print on stderr.
 */
-char set_opcode(pid_t pid, long opcode, void *addr);
+long set_opcode(pid_t pid, long opcode, void *addr);
 
 #endif /* !TRACE_H */
