@@ -19,8 +19,8 @@ static void *get_addr(struct debug_infos *dinfos, char *args[])
     }
     else {
         char *endptr = NULL;
-        bp_addr = (void *)strtol(args[1], NULL, 16);
-        if (endptr || errno == ERANGE)
+        bp_addr = (void *)strtol(args[1], &endptr, 16);
+        if (*endptr || errno == ERANGE)
             goto err_invalid_arg;
     }
 

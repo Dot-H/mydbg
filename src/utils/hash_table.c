@@ -28,12 +28,6 @@ struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
     return h;
 }
 
-void htable_destroy(struct htable *htable)
-{
-    (void)htable;
-    /* TODO */
-}
-
 struct data *htable_get(const struct htable *htable, void *key)
 {
     size_t idx           = htable->hash_func(key) % htable->size;

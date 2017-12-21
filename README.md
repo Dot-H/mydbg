@@ -49,6 +49,18 @@ Commands
     singlestep
             [PID]   Execute a unique instruction
 
+    examine $format size start_addr [PID]
+                    Print size bytes from start_addr with the format given in
+                    argument.
+
+            $i      Disassemble
+
+            $d      integer format
+
+            $x      hexadecimal format (32bit)
+            
+            $s      null terminated string
+
 Return values
 -------------
 

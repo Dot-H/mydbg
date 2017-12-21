@@ -37,13 +37,6 @@ struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
                                     int (*key_cmp)(void *, void *));
 
 /**
-** \param htable struct to destroy.
-**
-** \brief Destroys all the allocated memory inside \p htable. 
-*/
-void htable_destroy(struct htable *htable);
-
-/**
 ** \param key Key to search inside \p htable
 **
 ** \brief Search a matching key inside the htable.

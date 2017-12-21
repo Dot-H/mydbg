@@ -16,7 +16,7 @@ static struct dproc *get_proc(struct debug_infos *dinfos, char *args[])
     if (args && args[1]) {
         char *endptr = NULL;
         pid = strtol(args[1], &endptr, 10);
-        if (endptr || errno == ERANGE)
+        if (*endptr || errno == ERANGE)
             goto err_invalid_arg;
     }
 

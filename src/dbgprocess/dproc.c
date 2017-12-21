@@ -36,7 +36,7 @@ void dproc_destroy(struct dproc *proc)
     if (proc->unw.as)
         unw_destroy_addr_space(proc->unw.as);
 
-    if (!is_finished(proc))
+    if (proc->pid && !is_finished(proc))
         kill_process(proc->pid);
 
     free(proc);

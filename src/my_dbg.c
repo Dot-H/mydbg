@@ -48,8 +48,8 @@ void destroy_debug_infos(struct debug_infos *dinfos)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
     empty_debug_infos(dinfos);
-    htable_destroy(dinfos->dproc_table);
-    htable_destroy(dinfos->bp_table);
+    dproc_htable_destroy(dinfos->dproc_table);
+    bp_htable_destroy(dinfos->bp_table);
     free(dinfos);
 }
 
