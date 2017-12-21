@@ -43,6 +43,10 @@ Commands
     break   [ADDR]  Put a breakpoint on the address in argument if any and
                     on the current address otherwise.
 
+    tbreak  [ADDR]  Put a temporary breakpoint on the address in argument if
+                    any and on the current address otherwise. A temporary is
+                    hit only one time before being trash.
+
     continue
             [PID]   Continue the execution of the pid given in argument.
 
@@ -58,8 +62,11 @@ Commands
             $d      integer format
 
             $x      hexadecimal format (32bit)
-            
+
             $s      null terminated string
+
+    backtrace
+            [PID]   Print the call stack from the current addr
 
 Return values
 -------------

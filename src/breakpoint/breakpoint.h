@@ -66,10 +66,10 @@ int bp_destroy(struct breakpoint *bp);
 ** \brief Search for the breakpoint which could haved caused the
 ** SIGTRAP received by \p proc. If found, the saved instruction
 ** is execute and the breakpoint is actualized.
-** 
+**
 ** \return Returns 0 if a breakpoint has been found and everything
 ** went fine. Otherwise -1 is returned.
-** 
+**
 ** \note If a breakpoint is found but the routine failed, an error
 ** is print on stderr and -1 is returned.
 */

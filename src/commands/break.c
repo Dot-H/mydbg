@@ -38,8 +38,10 @@ int do_break(struct debug_infos *dinfos, char *args[])
         return -1;
     }
 
+    enum bp_type btype = (args[0][0] == 't') ? BP_TEMPORARY : BP_CLASSIC;
+
     void *bp_addr         = get_addr(dinfos, args);
-    struct breakpoint *bp = bp_creat(BP_CLASSIC);
+    struct breakpoint *bp = bp_creat(btype);
     bp->a_pid             = dinfos->dflt_pid;
 
     bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
@@ -64,3 +66,5 @@ out_destroy_bp:
 }
 
 shell_cmd(break, do_break, "Put a breakpoint on the address given in argument");
+shell_cmd(tbreak, do_break, "Put a temporary breakpoint on the address given \
+        in argument");

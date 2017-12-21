@@ -97,8 +97,7 @@ err_reset_bp:
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc)
 {
-    (void)dinfos;
-    printf("Hit breakpoint %u at %p\n", bp->id, bp->addr);
+    printf("Hit temporary breakpoint %u at %p\n", bp->id, bp->addr);
     if (set_opcode(proc->pid, bp->sv_instr, bp->addr) == -1) {
         fprintf(stderr, "Could not restore instruction at %p", bp->addr);
         goto err_reset_bp;
@@ -108,6 +107,8 @@ static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
         fprintf(stderr, "Could not set RIP to %p", bp->addr);
         goto err_reset_bp;
     }
+
+    bp_htable_remove(bp, dinfos->bp_table);
 
     return 0;
 
