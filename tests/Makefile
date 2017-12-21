@@ -3,8 +3,11 @@ CFLAGS += -Wall -Wextra -Werror -std=c99 -pedantic
 LDFLAGS =
 LDLIBS +=
 
-SRC = test.c
-OBJ = ${SRC:.c=.o}
+TST = test.c
+OBJ_TST = ${TST:.c=.o}
+
+BT = backtrace.c
+OBJ_BT = ${BT:.c=.o}
 
 all: test
 
@@ -17,7 +20,14 @@ nopie: CFLAGS += -no-pie -o test_nopie
 nopie: LDFLAGS += -no-pie
 nopie: test
 
-.PHONY: clean check
+backtrace_dbg: CFLAGS += -g
+backtrace_dbg: backtrace
+
+backtrace: ${OBJ_BT}
+backtrace:
+	${CC} ${CFLAGS} ${OBJ_BT} -o backtrace
+
+.PHONY: clean check backtrace nopie backtrace_dbg
 clean:
 	${RM} ${OBJ}
 	${RM} test

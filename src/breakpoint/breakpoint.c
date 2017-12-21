@@ -24,8 +24,9 @@ int bp_destroy(struct breakpoint *bp)
     if (!bp)
         return -1;
 
-    if (bp->sv_instr && set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
-        return -1;
+    if (bp->sv_instr && bp->sv_instr != -1)
+        if (set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
+            return -1;
 
     free(bp);
     return 0;

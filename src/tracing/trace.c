@@ -89,7 +89,7 @@ err_print_errno:
     return -1;
 }
 
-char set_opcode(pid_t pid, long opcode, void *addr)
+long set_opcode(pid_t pid, long opcode, void *addr)
 {
     long saved_data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
     if (saved_data == -1) {
