@@ -47,6 +47,8 @@ Commands
                     any and on the current address otherwise. A temporary is
                     hit only one time before being trash.
 
+    break_list      List all the breakpoints
+
     continue
             [PID]   Continue the execution of the pid given in argument.
 

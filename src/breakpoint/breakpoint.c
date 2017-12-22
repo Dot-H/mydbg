@@ -32,17 +32,19 @@ int bp_destroy(struct breakpoint *bp)
     return 0;
 }
 
-int bp_create_reset(struct htable *htable, struct breakpoint *bp)
+int bp_create_reset(struct htable *htable, struct breakpoint *father)
 {
     struct breakpoint *bp_rst = malloc(sizeof(struct breakpoint));
     if (!bp_rst)
         err(1, "Cannot allocate memory for reset breakpoint\n");
 
-    bp_rst->type       = BP_RESET;
-    bp_rst->a_pid      = bp->a_pid;
-    bp_rst->is_enabled = 1;
+    bp_rst->count = 0;
+    bp_rst->id    = father->id;
+    bp_rst->type  = BP_RESET;
+    bp_rst->a_pid = father->a_pid;
+    bp_rst->state = BP_ENABLED;
 
-    bp_rst->addr = (void *)((uintptr_t)bp->addr + 1);
+    bp_rst->addr = (void *)((uintptr_t)father->addr + 1);
     bp_rst->sv_instr = set_opcode(bp_rst->a_pid, BP_OPCODE, bp_rst->addr);
     if (bp_rst->sv_instr == -1)
         goto out_destroy_bp_rst;
@@ -145,8 +147,10 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
                 bp->addr);
     }
 
-    bp->id = bp_id;
-    ++bp_id;
+    if (bp->type != BP_RESET) {
+        bp->id = bp_id;
+        ++bp_id;
+    }
 
     return ret;
 }

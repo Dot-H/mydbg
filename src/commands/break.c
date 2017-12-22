@@ -48,8 +48,8 @@ int do_break(struct debug_infos *dinfos, char *args[])
     if (bp->sv_instr == -1)
         goto out_destroy_bp;
 
-    bp->addr       = bp_addr;
-    bp->is_enabled = 1;
+    bp->addr  = bp_addr;
+    bp->state = BP_ENABLED;
 
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)
     {

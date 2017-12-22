@@ -15,6 +15,7 @@
 /**
 ** \param BP_RESET used to a breakpoint previously hit. When a BP_RESET
 ** is hit, it puts a BP_OPCODE on its addr - 1 and destroys itself.
+** \note a BP_RESET id is its father's.
 */
 enum bp_type {
     BP_CLASSIC = 0,
@@ -22,11 +23,17 @@ enum bp_type {
     BP_RESET = 2,
 };
 
+enum bp_state {
+    BP_ENABLED,
+    BP_DISABLED,
+    BP_HIT, // Currently hit
+};
+
 struct breakpoint {
     enum bp_type type;
     unsigned id; /* A bp has no id while it is not in the bp table */
     pid_t a_pid; /* Associated pid */
-    int is_enabled;
+    enum bp_state state;
 
     void *addr; /* Address of the replaced instruction / breakpoint */
     long sv_instr; /* Saved instruction */

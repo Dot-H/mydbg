@@ -58,7 +58,7 @@ static int hit_reset(struct debug_infos *dinfos, struct breakpoint *bp,
     }
 
     bp_htable_remove(bp, dinfos->bp_table);
-    bp_orig->is_enabled = 1;
+    bp_orig->state = BP_ENABLED;
 
     do_continue(dinfos, NULL);
     wait_tracee(dinfos, proc);
@@ -82,7 +82,7 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
         goto err_reset_bp;
     }
 
-    bp->is_enabled = 0; /* Will be reabled by reset bp */
+    bp->state = BP_HIT; /* Will be reabled by reset bp */
     if (bp_create_reset(dinfos->bp_table, bp) == -1)
         goto err_reset_bp;
 
@@ -131,7 +131,7 @@ int bp_hit(struct debug_infos *dinfos, struct dproc *proc)
     if (!bp)
         return -1;
 
-    if (!bp->is_enabled)
+    if (bp->state == BP_HIT || bp->state == BP_DISABLED)
         return -1;
 
     return bp_handlers[bp->type](dinfos, bp, proc);

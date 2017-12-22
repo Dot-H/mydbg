@@ -51,7 +51,7 @@ struct data *htable_pop(struct htable *htable, void *key)
     if (!search)
         return NULL;
 
-    htable->nmemb += 1;
+    htable->nmemb -= 1;
     wl_list_remove(&search->link);
 
     return search;
