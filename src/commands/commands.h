@@ -3,6 +3,8 @@
 
 # include <stddef.h>
 
+# include "args_helper.h"
+
 struct debug_infos;
 
 typedef int (*cmd_func)(struct debug_infos *, char *args[]);

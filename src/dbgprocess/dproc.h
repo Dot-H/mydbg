@@ -53,6 +53,14 @@ void dproc_htable_reset(struct htable *htable);
 */
 int is_finished(struct dproc *proc);
 
+/**
+** \brief Read \p size bytes at \p start_addr in \proc
+**
+** \return Returns an allocated null-terminated string filled with the
+** read bytes.
+*/
+char *read_dproc(struct dproc *proc, size_t size, uintptr_t start_addr);
+
 /****************************************/
 /*      Wrappers to struct htable       */
 /****************************************/

@@ -1,7 +1,9 @@
 #include <err.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
+#include <sys/ptrace.h>
 #include <sys/wait.h>
 
 #include "dproc.h"
@@ -45,6 +47,32 @@ void dproc_destroy(struct dproc *proc)
 int is_finished(struct dproc *proc)
 {
     return WIFEXITED(proc->status) && WIFSIGNALED(proc->status);
+}
+
+char *read_dproc(struct dproc *proc, size_t size, uintptr_t start_addr)
+{
+    int word     = sizeof(long);
+    size_t alloc = size + word - (size % word) + 1;
+    char *dumped = malloc(alloc);
+
+    size_t nb_call = size / word + (size % word != 0);
+    size_t i = 0;
+    for ( ; i < nb_call; ++i) {
+        void *addr   = (void *)(start_addr + i * word);
+        long data = ptrace(PTRACE_PEEKTEXT, proc->pid, addr, NULL);
+        if (data == -1)
+            goto err_free_dumped;
+
+        memcpy(dumped + (i * word), &data, word); 
+    }
+
+    memset(dumped + size, 0, size % word);
+    return dumped;
+
+err_free_dumped:
+    free(dumped);
+    warn("Failed to PEEKTEXT %d at %lx", proc->pid, start_addr + i * word);
+    return NULL;
 }
 
 /**

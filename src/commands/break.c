@@ -9,38 +9,34 @@
 #include "dproc.h"
 #include "trace.h"
 
-static void *get_addr(struct debug_infos *dinfos, char *args[])
+static void *get_addr(struct debug_infos *dinfos, char *args[], int argsc)
 {
     void *bp_addr = NULL;
-    if (!args || !args[1]) {
+    if (argsc == 2) {
         struct dproc *proc = dproc_htable_get(dinfos->dflt_pid,
                                               dinfos->dproc_table);
         bp_addr = proc->siginfo.si_addr;
-    }
-    else {
-        char *endptr = NULL;
-        bp_addr = (void *)strtol(args[1], &endptr, 16);
-        if (*endptr || errno == ERANGE)
-            goto err_invalid_arg;
+    } else {
+        long bp_addr = arg_to_long(args[1], 16);
+        if (bp_addr == -1)
+            return NULL;
     }
 
-    return bp_addr;
-
-err_invalid_arg:
-    fprintf(stderr, "Invalid argument(s)\n");
-    return NULL;
+    return (void *)bp_addr;
 }
 
 int do_break(struct debug_infos *dinfos, char *args[])
 {
-    if (!dinfos->melf.elf || !dinfos->dflt_pid) {
-        fprintf(stderr, "No running process\n");
+    if (!is_running(dinfos))
         return -1;
-    }
+
+    int argsc = check_params(args, 1, 2);
+    if (argsc == -1)
+        return -1;
 
     enum bp_type btype = (args[0][0] == 't') ? BP_TEMPORARY : BP_CLASSIC;
 
-    void *bp_addr         = get_addr(dinfos, args);
+    void *bp_addr         = get_addr(dinfos, args, argsc);
     struct breakpoint *bp = bp_creat(btype);
     bp->a_pid             = dinfos->dflt_pid;
 
@@ -67,4 +63,4 @@ out_destroy_bp:
 
 shell_cmd(break, do_break, "Put a breakpoint on the address given in argument");
 shell_cmd(tbreak, do_break, "Put a temporary breakpoint on the address given \
-        in argument");
+ in argument");

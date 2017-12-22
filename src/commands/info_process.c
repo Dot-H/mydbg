@@ -8,7 +8,9 @@
 
 int print_process(struct debug_infos *dinfos, char *args[])
 {
-    (void)args;
+    if (check_params(args, 1, 1) == -1)
+        return -1;
+
     if (dinfos->dproc_table->nmemb == 0){
         printf("No running process\n");
         return -1;

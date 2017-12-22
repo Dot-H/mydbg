@@ -7,53 +7,16 @@
 #include <sys/wait.h>
 
 #include "commands.h"
+#include "args_helper.h"
 #include "my_dbg.h"
 #include "trace.h"
 #include "dproc.h"
 #include "print_func.h"
 
-/**
-** \param arr Null terminated array
-**
-** \return Return the size of \p arr
-*/
-static size_t nullarray_size(char *arr[])
-{
-    if (!arr)
-        return 0;
-
-    size_t size = 0;
-    while (arr[size])
-        ++size;
-
-    return size;
-}
-
-static long arg_to_long(char *arg, int base)
-{
-    char *endptr = NULL;
-    long res = strtol(arg, &endptr, base);
-    if (*endptr || errno == ERANGE)
-        return -1;
-
-    return res;
-}
-
-static int check_params(char *args[])
-{
-    size_t size = nullarray_size(args);
-    if (size > 2) {
-        fprintf(stderr, "Too many arguments\n");
-        return -1;
-    }
-
-    return size;
-}
-
 static struct dproc *get_dproc(struct debug_infos *dinfos, char *args[])
 {
     pid_t pid = dinfos->dflt_pid;
-    int argsc = check_params(args);
+    int argsc = check_params(args, 1, 2);
     if (argsc == -1)
         return NULL;
     else if (argsc == 2) {

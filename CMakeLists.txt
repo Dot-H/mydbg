@@ -31,6 +31,7 @@ set(SRC
         src/opening/mapping.c
         src/print/print_func.c
         src/tracing/trace.c
+        src/utils/args_helper.c
         src/utils/hash_table.c
         src/utils/wayland-util.c
   )

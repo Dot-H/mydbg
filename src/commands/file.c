@@ -8,11 +8,8 @@
 
 int load_file(struct debug_infos *dinfos, char *args[])
 {
-    if (!args[1]){
-        fprintf(stderr,
-          "Need an argument. Type help file for further informations\n");
+    if (check_params(args, 2, 2) == -1)
         return -1;
-    }
 
     fprintf(stderr, "loading %s ...", args[1]);
     fflush(stdout);

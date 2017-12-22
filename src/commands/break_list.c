@@ -36,12 +36,13 @@ const char *type_name(enum bp_type type)
 
 int print_bps(struct debug_infos *dinfos, char *args[])
 {
-    (void)args;
     if (dinfos->dproc_table->nmemb == 0){
         printf("No running process\n");
         return -1;
     }
 
+    if (check_params(args, 1, 1) == -1)
+        return -1;
 
     struct htable *htable = dinfos->bp_table;
     const char *grammar = htable->nmemb > 1 ? "are" : "is";

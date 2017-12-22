@@ -23,14 +23,18 @@ static int unique_doc(const char *str)
 int print_help(struct debug_infos *dinfos, char *args[])
 {
     (void)dinfos;
-    if (args && args[1])
+    int argc = check_params(args, 1, 2);
+    if (argc == -1)
+        return -1;
+
+    if (argc == 2)
        return unique_doc(args[1]);
 
     size_t len = __stop_cmds - __start_cmds;
 
     for (size_t i = 0; i < len; ++i) {
         struct command *cmd = __start_cmds + i;
-        printf("%s: %s\n", cmd->name, cmd->doc);
+        printf(KBLU"%s"KNRM": %s\n", cmd->name, cmd->doc);
     }
 
     return 0;

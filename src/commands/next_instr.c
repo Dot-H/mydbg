@@ -6,15 +6,8 @@
 #include <sys/wait.h>
 
 #include "commands.h"
-#include "args_helper.h"
 #include "my_dbg.h"
-#include "trace.h"
 #include "dproc.h"
-#include "print_func.h"
-
-// examine $format size start_addr [pid]
-
-extern struct print_func print_functions[];
 
 /*
 ** \brief parse the arguments given by the user and fill the corresponding
@@ -59,8 +52,10 @@ static int parse_args(char *args[], char *format,
 
 int do_examine(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!dinfos->melf.elf || !dinfos->dflt_pid) {
+        fprintf(stderr, "No running process\n");
         return -1;
+    }
 
     char format;
     size_t size;

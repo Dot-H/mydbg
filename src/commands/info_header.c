@@ -9,7 +9,9 @@
 
 int print_header(struct debug_infos *dinfos, char *args[])
 {
-    (void)args;
+    if (check_params(args, 1, 1) == -1)
+        return -1;
+
     if (!dinfos->melf.elf){
         fprintf(stderr, "No elf loaded\n");
         return -1;
