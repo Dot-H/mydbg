@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 
 #include "dproc.h"
+#include "breakpoint.h"
 
 static void kill_process(pid_t pid)
 {
@@ -49,7 +50,8 @@ int is_finished(struct dproc *proc)
     return WIFEXITED(proc->status) && WIFSIGNALED(proc->status);
 }
 
-char *read_dproc(struct dproc *proc, size_t size, uintptr_t start_addr)
+char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
+                 size_t size, uintptr_t start_addr)
 {
     int word     = sizeof(long);
     size_t alloc = size + word - (size % word) + 1;
@@ -64,9 +66,21 @@ char *read_dproc(struct dproc *proc, size_t size, uintptr_t start_addr)
             goto err_free_dumped;
 
         memcpy(dumped + (i * word), &data, word); 
+        for (int j = 0; j < word; ++j) {
+            struct breakpoint *bp =
+                bp_htable_get((void *)(start_addr + j + i * word),
+                              dinfos->bp_table);
+            if (bp)
+                dumped[i * word + j] = bp->sv_instr & 0xff;
+        }
     }
 
+
     memset(dumped + size, 0, size % word);
+    struct breakpoint *bp = bp_htable_get((void *)(start_addr + 1),
+                                          dinfos->bp_table);
+    if (bp)
+        dumped[1] = bp->sv_instr & 0xff;
     return dumped;
 
 err_free_dumped:
@@ -83,12 +97,12 @@ static size_t pid_hash(void *pid)
 {
     pid_t hpid = *(pid_t *)pid;
 
-    hpid = (hpid+0x7ed55d16) + (hpid<<12);
-    hpid = (hpid^0xc761c23c) ^ (hpid>>19);
-    hpid = (hpid+0x165667b1) + (hpid<<5);
-    hpid = (hpid+0xd3a2646c) ^ (hpid<<9);
-    hpid = (hpid+0xfd7046c5) + (hpid<<3);
-    hpid = (hpid^0xb55a4f09) ^ (hpid>>16);
+    hpid = (hpid + 0x7ed55d16) + (hpid << 12);
+    hpid = (hpid ^ 0xc761c23c) ^ (hpid >> 19);
+    hpid = (hpid + 0x165667b1) + (hpid << 5);
+    hpid = (hpid + 0xd3a2646c) ^ (hpid << 9);
+    hpid = (hpid + 0xfd7046c5) + (hpid << 3);
+    hpid = (hpid ^ 0xb55a4f09) ^ (hpid >> 16);
 
     return hpid;
 }

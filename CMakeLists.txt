@@ -24,6 +24,7 @@ set(SRC
         src/commands/info_header.c
         src/commands/quit.c
         src/commands/run.c
+        src/commands/next_instr.c
         src/commands/singlestep.c
         src/dbgprocess/dproc.c
         src/inputs/inputs.c

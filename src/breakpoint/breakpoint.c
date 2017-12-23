@@ -152,5 +152,6 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
         ++bp_id;
     }
 
+    printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
     return ret;
 }

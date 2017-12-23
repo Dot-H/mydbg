@@ -1,5 +1,8 @@
 ## my_dbg TODO
 
+important:
+    [ ] Find an other way than reset breakpoints
+
 portability:
     [ ] 32bits elf support
 
@@ -9,6 +12,8 @@ commands:
     [ ] add pid argument to break
     [ ] examine $d
     [ ] examine $s: escape non printable arguments
+    [ ] argument N to singlestep and next_instr
+    [ ] reset all pids in bp_table when running again
 
 global:
     [ ] check for running process before reset binary

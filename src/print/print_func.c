@@ -61,7 +61,8 @@ void hexa_print(char *str, size_t len, uintptr_t addr)
 
     print_addr(addr);
     putchar('\t');
-    hexa_print_32(str, nb_print);
+    hexa_print_32(str, len);
+    len -= int_size;
 
     for (size_t i = 1; i < nb_print; ++i) {
         size_t oft = i * int_size;
@@ -71,7 +72,8 @@ void hexa_print(char *str, size_t len, uintptr_t addr)
         }
 
         putchar('\t');
-        hexa_print_32(str + oft, nb_print - oft);
+        hexa_print_32(str + oft, len);
+        len -= int_size;
     }
 
     putchar('\n');
@@ -104,26 +106,24 @@ void instr_print(char *str, size_t len, uintptr_t addr)
 {
     csh handle;
     cs_insn *insn;
-    size_t count;
 
     if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK) {
         fprintf(stderr, "Failed to initialize capstone\n");
         return;
     }
 
-    count = cs_disasm(handle, (uint8_t *)str, len, addr, 0, &insn);
+    size_t count = cs_disasm(handle, (uint8_t *)str, len, addr, 0, &insn);
     if (count > 0) {
-        size_t j;
-        for (j = 0; j < count; j++) {
+        for (size_t j = 0; j < count; j++) {
             printf("0x%lx:\t%s\t\t%s\n", insn[j].address,
                    insn[j].mnemonic, insn[j].op_str);
         }
 
         cs_free(insn, count);
     }
-
     else
         fprintf(stderr, "Failed to disassemble given code\n");
+
 
     cs_close(&handle);
 }

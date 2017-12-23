@@ -10,6 +10,7 @@
 # include <sys/wait.h>
 
 # include "hash_table.h"
+# include "my_dbg.h"
 
 # define DPROC_HTABLE_SIZE 10
 
@@ -59,7 +60,8 @@ int is_finished(struct dproc *proc);
 ** \return Returns an allocated null-terminated string filled with the
 ** read bytes.
 */
-char *read_dproc(struct dproc *proc, size_t size, uintptr_t start_addr);
+char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
+                 size_t size, uintptr_t start_addr);
 
 /****************************************/
 /*      Wrappers to struct htable       */

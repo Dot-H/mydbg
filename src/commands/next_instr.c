@@ -1,85 +1,125 @@
 #include <err.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/wait.h>
+#include <sys/ptrace.h>
+#include <capstone/capstone.h>
 
 #include "commands.h"
+#include "breakpoint.h"
 #include "my_dbg.h"
 #include "dproc.h"
+#include "trace.h"
 
-/*
-** \brief parse the arguments given by the user and fill the corresponding
-** parameters. If a pid is given, returns it.
-**
-** \return Return a potential pid or 0 if none.
-*/
-static int parse_args(char *args[], char *format,
-                      size_t *size, uintptr_t *start_addr)
+#define TST_LEN 16
+
+static void *get_stopped_addr(struct dproc *proc)
 {
-    size_t argsc = nullarray_size(args);
-    if (argsc < 4 || argsc > 5) {
-        fprintf(stderr, "Invalid number of argument\n");
-        return -1;
+    if (unw_init_remote(&proc->unw.c, proc->unw.as,
+                        proc->unw.ui) < 0) {
+        fprintf(stderr, "Error while initing remote\n");
+        return NULL;
     }
 
-    if (!is_valid_format(args[1])) {
-        fprintf(stderr, "%s: invalid argument\n", args[1]);
-        return -1;
+    unw_word_t rip;
+    if (unw_get_reg(&proc->unw.c, UNW_X86_64_RIP, &rip) < 0) {
+            fprintf(stderr, "Error while getting RIP");
+            return NULL;
     }
 
-    *format = args[1][1];
-    *size   = arg_to_long(args[2], 10);
-    if (*size == (size_t)-1)
-        return -1;
-
-    *start_addr = arg_to_long(args[3], 16);
-    if (*start_addr == (uintptr_t)(-1))
-        return -1;
-
-    pid_t pid = 0;
-    if (argsc == 5) {
-        pid_t pid = arg_to_long(args[4], 10);
-        if (pid == -1) {
-            fprintf(stderr, "%s: invalid argument\n", args[4]);
-            return -1;
-        }
-    }
-
-    return pid;
+    return (void *)(rip);
 }
 
-int do_examine(struct debug_infos *dinfos, char *args[])
+static void *check_call(char *str, uintptr_t addr)
 {
-    if (!dinfos->melf.elf || !dinfos->dflt_pid) {
-        fprintf(stderr, "No running process\n");
-        return -1;
+    csh handle;
+    cs_insn *insn;
+    void *ret = NULL;
+
+    if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK) {
+        fprintf(stderr, "Failed to initialize capstone\n");
+        return ret;
     }
 
-    char format;
-    size_t size;
-    uintptr_t start_addr;
-    pid_t pid = parse_args(args, &format, &size, &start_addr);
-    if (pid == -1)
-        return -1;
+    size_t count = cs_disasm(handle, (uint8_t *)str, TST_LEN, addr, 0, &insn);
+    if (count > 0) {
+        if (!strcmp(insn[0].mnemonic, "call"))
+            ret = (void *)insn[1].address;
 
-    pid = (!pid) ? dinfos->dflt_pid : pid;
-    struct dproc *proc = dproc_htable_get(pid, dinfos->dproc_table);
-    if (!proc)
+        cs_free(insn, count);
+    }
+    else
+        fprintf(stderr, "Failed to disassemble given code\n");
+
+    cs_close(&handle);
+    return ret;
+}
+
+static int jump_call(struct debug_infos *dinfos, struct dproc *proc,
+                     void *nxt_addr)
+{
+    struct breakpoint *bp = bp_creat(BP_TEMPORARY);
+    bp->a_pid              = proc->pid;
+
+    bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, nxt_addr);
+    if (bp->sv_instr == -1)
+        goto err_free_bp;
+
+    bp->addr  = (void *)nxt_addr;
+    bp->state = BP_ENABLED;
+
+    if (bp_htable_insert(bp, dinfos->bp_table) == -1)
     {
-        fprintf(stderr, "%d is not a valid pid\n", pid);
-        return -1;
+        fprintf(stderr, "A breakpoint is already set at %p\n",  bp->addr);
+        goto err_free_bp;
     }
 
-    char *dumped = read_dproc(proc, size, start_addr);
+    return do_continue(dinfos, NULL);
+
+err_free_bp:
+    free(bp);
+    return -1;
+}
+
+int do_ni(struct debug_infos *dinfos, char *args[])
+{
+    if (!is_running(dinfos))
+        return -1;
+
+    int argsc = check_params(args, 1, 2);
+    if (!argsc)
+        return -1;
+
+    struct dproc *proc = get_proc(dinfos, args, argsc, 1);
+    if (!proc)
+        return -1;
+
+    uintptr_t bp_addr = (uintptr_t)get_stopped_addr(proc);
+    char *dumped = read_dproc(dinfos, proc, 8, bp_addr);
     if (!dumped)
         return -1;
 
-    get_print_func(format)(dumped, size, start_addr);
+    int ret = 0;
+    void *nxt_addr = check_call(dumped, bp_addr);
+    if (!nxt_addr) {
+        if (ptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0) == -1) {
+            warn("Could not singlstep in %d", proc->pid);
+            goto err_free_dumped;
+        }
+
+        wait_tracee(dinfos, proc);
+    } else {
+        ret = jump_call(dinfos, proc, nxt_addr);
+    }
+
     free(dumped);
 
-    return 0;
+    return ret;
+
+err_free_dumped:
+    free(dumped);
+    return -1;
 }
 
-shell_cmd(examine, do_examine, "Examine memory at a given address");
+shell_cmd(next_instr, do_ni, "Step one instruction, but proceed through \
+ subroutine calls");

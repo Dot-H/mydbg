@@ -12,17 +12,18 @@
 static void *get_addr(struct debug_infos *dinfos, char *args[], int argsc)
 {
     void *bp_addr = NULL;
-    if (argsc == 2) {
+    if (argsc == 1) {
         struct dproc *proc = dproc_htable_get(dinfos->dflt_pid,
                                               dinfos->dproc_table);
         bp_addr = proc->siginfo.si_addr;
     } else {
-        long bp_addr = arg_to_long(args[1], 16);
-        if (bp_addr == -1)
+        long arg_addr = arg_to_long(args[1], 16);
+        if (arg_addr == -1)
             return NULL;
+        bp_addr = (void *)arg_addr;
     }
 
-    return (void *)bp_addr;
+    return bp_addr;
 }
 
 int do_break(struct debug_infos *dinfos, char *args[])
@@ -53,7 +54,6 @@ int do_break(struct debug_infos *dinfos, char *args[])
         goto out_destroy_bp;
     }
 
-    printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
     return 0;
 
 out_destroy_bp:

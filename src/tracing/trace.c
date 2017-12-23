@@ -11,38 +11,40 @@
 #include "dproc.h"
 #include "breakpoint.h"
 
-static void print_status(pid_t pid, int status)
+static void print_status(struct dproc *proc)
 {
-    if (WIFEXITED(status))
-        fprintf(stderr, "%d exited normally with code %d\n", pid,
-                WEXITSTATUS(status));
+    if (WIFEXITED(proc->status))
+        fprintf(stderr, "%d exited normally with code %d\n", proc->pid,
+                WEXITSTATUS(proc->status));
 
-    else if (WIFCONTINUED(status))
-        fprintf(stderr, "%d continued\n", pid);
+    else if (WIFCONTINUED(proc->status))
+        fprintf(stderr, "%d continued\n", proc->pid);
 
-    else if (WIFSIGNALED(status))
-        fprintf(stderr, "%d terminates by signal %s\n", pid,
-                strsignal(WSTOPSIG(status)));
+    else if (WIFSIGNALED(proc->status))
+        fprintf(stderr, "%d terminates by signal %s\n", proc->pid,
+                strsignal(WSTOPSIG(proc->status)));
 
-    else if (WIFSTOPPED(status))
-        fprintf(stderr, "%d stopped by signal %s\n", pid,
-                strsignal(WSTOPSIG(status)));
+    else if (WIFSTOPPED(proc->status))
+        fprintf(stderr, "%d stopped by signal %s\n", proc->pid,
+                strsignal(WSTOPSIG(proc->status)));
 
     else
-        fprintf(stderr, "%d has received an unknown signal. status: %d\n",
-                pid, status);
+        fprintf(stderr, "%d has received an unknown signal. proc->status: %d\n",
+                proc->pid, proc->status);
 }
 
 void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
 {
     waitpid(proc->pid, &proc->status, 0);
-    print_status(proc->pid, proc->status);
+
+    print_status(proc);
 
     if (is_finished(proc))
         return;
 
     if (ptrace(PTRACE_GETSIGINFO, proc->pid, 0, &proc->siginfo) == -1)
         warn("Failed to recover siginfo from %d", proc->pid);
+
 
     if (proc->siginfo.si_signo == SIGTRAP)
         bp_hit(dinfos, proc);
@@ -108,6 +110,8 @@ long set_opcode(pid_t pid, long opcode, void *addr)
         warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr);
         return -1;
     }
+
+    printf("poked %lx\n", new_data);
 
     return saved_data & 0xff;
 }

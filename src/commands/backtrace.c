@@ -59,7 +59,7 @@ int do_backtrace(struct debug_infos *dinfos, char *args[])
 
         char nam[4096];
         if (!unw_get_proc_name(&cp, nam, sizeof(nam), &oft)) {
-            printf("\t%s+0x%lx\n", nam, oft);
+            printf("\t%s <+%ld>\n", nam, oft);
         } else {
             printf("(\?\?\?\?\?\?)\n");
         }

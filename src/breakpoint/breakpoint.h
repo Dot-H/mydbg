@@ -15,7 +15,7 @@
 /**
 ** \param BP_RESET used to a breakpoint previously hit. When a BP_RESET
 ** is hit, it puts a BP_OPCODE on its addr - 1 and destroys itself.
-** \note a BP_RESET id is its father's.
+** \note a BP_RESET id is its father's
 */
 enum bp_type {
     BP_CLASSIC = 0,

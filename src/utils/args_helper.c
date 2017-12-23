@@ -31,6 +31,9 @@ long arg_to_long(char *arg, int base)
 
 int check_params(char *args[], size_t min, size_t max)
 {
+    if (!args && min == 1)
+        return 1;
+
     size_t size = nullarray_size(args);
     if (size > max) {
         fprintf(stderr, "Too many arguments\n");
@@ -51,4 +54,21 @@ int is_running(struct debug_infos *dinfos)
     }
 
     return 1;
+}
+
+struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
+                       int idx)
+{
+    pid_t pid = dinfos->dflt_pid;
+    if (argsc > idx) {
+        pid = arg_to_long(args[idx], 10);
+        if (pid == -1)
+            return NULL;
+    }
+
+    struct dproc *proc = dproc_htable_get(pid, dinfos->dproc_table);
+    if (!proc)
+        fprintf(stderr, "Could not find process %d\n", pid);
+
+    return proc;
 }

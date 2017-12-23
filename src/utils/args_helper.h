@@ -2,6 +2,7 @@
 # define ARGS_HELPER_H
 
 # include "my_dbg.h"
+# include "dproc.h"
 
 # define KNRM  "\x1B[0m"
 # define KRED  "\x1B[31m"
@@ -32,7 +33,7 @@ size_t nullarray_size(char *arr[]);
 */
 long arg_to_long(char *arg, int base);
 
-/*
+/**
 ** \args Null terminated array of string
 **
 ** \brief Check if the number of string inside args is inside
@@ -46,13 +47,24 @@ long arg_to_long(char *arg, int base);
 */
 int check_params(char *args[], size_t min, size_t max);
 
-/*
-** \args dinfos debugging informations
-**
+/**
 ** \return Returns 1 if the the process is running and 0 otherwise.
 **
 ** \note If the process is not running, a message is print on stderr.
 */
 int is_running(struct debug_infos *dinfos);
 
+/**
+** \param idx Index of the pid
+**
+** \brief Get the struct dproc from either the pid given in \p args or
+** the pid in \p dinfos. The pid is taken from \args if \p idx is smaller
+** than \p argsc.
+**
+** \return Returns a struct dproc if the pid is valid and NULL otherwise.
+**
+** \note A message is print on stderr if the pid is invalid.
+*/
+struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
+                       int idx);
 #endif /* !ARGS_HELPER_H */

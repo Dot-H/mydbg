@@ -10,24 +10,6 @@
 #include "dproc.h"
 #include "trace.h"
 
-static struct dproc *get_proc(struct debug_infos *dinfos,
-                              char *args[], int argsc)
-{
-    pid_t pid = dinfos->dflt_pid;
-    if (argsc == 2) {
-        pid = arg_to_long(args[1], 10);
-        if (pid == -1)
-            return NULL;
-    }
-
-    struct dproc *proc = dproc_htable_get(pid, dinfos->dproc_table);
-    if (!proc)
-        fprintf(stderr, "Could not find process %d\n", pid);
-
-    return proc;
-}
-
-
 int do_continue(struct debug_infos *dinfos, char *args[])
 {
     if (!is_running(dinfos))
@@ -37,7 +19,7 @@ int do_continue(struct debug_infos *dinfos, char *args[])
     if (argsc == -1)
         return -1;
 
-    struct dproc *proc = get_proc(dinfos, args, argsc);
+    struct dproc *proc = get_proc(dinfos, args, argsc, 1);
     if (!proc)
         return -1;
 

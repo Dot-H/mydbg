@@ -18,19 +18,13 @@ extern struct print_func print_functions[];
 
 /*
 ** \brief parse the arguments given by the user and fill the corresponding
-** parameters. If a pid is given, returns it.
+** parameters.
 **
-** \return Return a potential pid or 0 if none.
+** \return Return 0 on success and -1 on failure.
 */
 static int parse_args(char *args[], char *format,
                       size_t *size, uintptr_t *start_addr)
 {
-    size_t argsc = nullarray_size(args);
-    if (argsc < 4 || argsc > 5) {
-        fprintf(stderr, "Invalid number of argument\n");
-        return -1;
-    }
-
     if (!is_valid_format(args[1])) {
         fprintf(stderr, "%s: invalid argument\n", args[1]);
         return -1;
@@ -45,21 +39,16 @@ static int parse_args(char *args[], char *format,
     if (*start_addr == (uintptr_t)(-1))
         return -1;
 
-    pid_t pid = 0;
-    if (argsc == 5) {
-        pid_t pid = arg_to_long(args[4], 10);
-        if (pid == -1) {
-            fprintf(stderr, "%s: invalid argument\n", args[4]);
-            return -1;
-        }
-    }
-
-    return pid;
+    return 0;
 }
 
 int do_examine(struct debug_infos *dinfos, char *args[])
 {
     if (!is_running(dinfos))
+        return -1;
+
+    int argsc = check_params(args, 4, 5);
+    if (argsc == -1)
         return -1;
 
     char format;
@@ -69,15 +58,11 @@ int do_examine(struct debug_infos *dinfos, char *args[])
     if (pid == -1)
         return -1;
 
-    pid = (!pid) ? dinfos->dflt_pid : pid;
-    struct dproc *proc = dproc_htable_get(pid, dinfos->dproc_table);
+    struct dproc *proc = get_proc(dinfos, args, argsc, 4);
     if (!proc)
-    {
-        fprintf(stderr, "%d is not a valid pid\n", pid);
         return -1;
-    }
 
-    char *dumped = read_dproc(proc, size, start_addr);
+    char *dumped = read_dproc(dinfos, proc, size, start_addr);
     if (!dumped)
         return -1;
 
