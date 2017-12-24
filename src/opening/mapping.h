@@ -1,9 +1,19 @@
 #ifndef MAPPING_H
 # define MAPPING_H
 
+# include <elf.h>
+
 struct melf {
     void  *elf;
     size_t size;
+};
+
+struct gnu_table {
+    uint32_t nbuckets;
+    uint32_t symoffset;
+    uint32_t bloom_size;
+    uint32_t bloom_shift;
+    uint64_t bloom;
 };
 
 /**
@@ -16,5 +26,7 @@ struct melf {
 ** and NULL in case of error.
 */
 void *map_elf(const char *file, size_t *size);
+
+const Elf64_Sym *find_symbol(Elf64_Ehdr *header);
 
 #endif /* !MAPPING_H */

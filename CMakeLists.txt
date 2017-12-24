@@ -30,6 +30,7 @@ set(SRC
         src/inputs/inputs.c
         src/my_dbg.c
         src/opening/mapping.c
+        src/opening/symbols.c
         src/print/print_func.c
         src/tracing/trace.c
         src/utils/args_helper.c

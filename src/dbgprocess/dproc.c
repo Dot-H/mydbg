@@ -65,7 +65,7 @@ char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
         if (data == -1)
             goto err_free_dumped;
 
-        memcpy(dumped + (i * word), &data, word); 
+        memcpy(dumped + (i * word), &data, word);
         for (int j = 0; j < word; ++j) {
             struct breakpoint *bp =
                 bp_htable_get((void *)(start_addr + j + i * word),

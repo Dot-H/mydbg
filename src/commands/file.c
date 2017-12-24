@@ -25,6 +25,7 @@ int load_file(struct debug_infos *dinfos, char *args[])
     dinfos->args      = dup_args(args + 1);
 
     fprintf(stderr, "done\n");
+    find_symbol(dinfos->melf.elf);
     return 0;
 }
 
