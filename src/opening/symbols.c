@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <link.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -81,7 +82,7 @@ const Elf64_Sym *gnu_lookup(const char *strtab, const Elf64_Sym *symtab,
     return NULL;
 }
 
-const Elf64_Sym *find_symbol(Elf64_Ehdr *header)
+const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
 {
     if (!header->e_shoff || !header->e_shentsize || 
         header->e_shstrndx == SHN_UNDEF)
@@ -95,6 +96,7 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header)
     get_sh_infos(header, shdr, &shnum, &shstrndx);
 
     Elf64_Sym *dynsymtab = NULL;
+    Elf64_Sym *symtab = NULL;
     char *shstrtab = add_oft(header, shdr[shstrndx].sh_offset); 
     char *dynstrtab;
     char *strtab;
@@ -112,6 +114,9 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header)
             printf("found dynamic: %s\n", name);
             dynamic = add_oft(header, shdr[i].sh_offset);
             dynsize = shdr[i].sh_size / shdr[i].sh_entsize;
+        } else if (!strcmp(name, ".symtab")) {
+            printf("found dynamic: %s\n", name);
+            symtab = add_oft(header, shdr[i].sh_offset);
         }/* else if (!strcmp(name, ".gnu.hash")) {
             printf("found hash: %s\n", name);
             gnutable = add_oft(header, shdr[i].sh_offset);
@@ -146,7 +151,8 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header)
      }
 
 #endif
-    for (uint64_t i = 0; i < dynsize; ++i)
+    struct r_debug *r_debug = NULL;
+    for (uint64_t i = 0; dynamic[i].d_tag != DT_NULL; ++i)
     {
         if (dynamic[i].d_tag == DT_GNU_HASH) {
             printf("Found hash table at %zu\n", i);
@@ -157,20 +163,17 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header)
         } else if (dynamic[i].d_tag == DT_SYMTAB) {
             printf("Found dynsymtab at %zu\n", i);
             dynsymtab = add_oft(header, dynamic[i].d_un.d_ptr);
+        } else if (dynamic[i].d_tag == DT_DEBUG) {
+            printf("Coucou\n");
+            r_debug = (struct r_debug *)dynamic[i].d_un.d_ptr;
+            if (r_debug)
+                printf("version: %d\n", r_debug->r_version);
         }
-
     }
-    const Elf64_Sym *ret = gnu_lookup(dynstrtab, dynsymtab, gnutable, "instr_print");
+    dynsize = dynsize;
+    symtab = symtab;
+    const Elf64_Sym *ret = gnu_lookup(dynstrtab, dynsymtab, gnutable, name);
 
     strtab = strtab; /* FIXME */
-    for (uint64_t i = 0; dynstrtab[i + 1];)
-    {
-        i += printf("%s\n", dynstrtab + i);
-    }
-    if (ret)
-        printf("FOUND\n");
-    else
-        printf("NOT FOUND\n");
-
     return ret;
 }

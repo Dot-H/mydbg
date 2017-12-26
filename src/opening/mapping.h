@@ -27,6 +27,6 @@ struct gnu_table {
 */
 void *map_elf(const char *file, size_t *size);
 
-const Elf64_Sym *find_symbol(Elf64_Ehdr *header);
+const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name);
 
 #endif /* !MAPPING_H */

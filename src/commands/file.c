@@ -8,10 +8,11 @@
 
 int load_file(struct debug_infos *dinfos, char *args[])
 {
-    if (check_params(args, 2, 2) == -1)
+    if (check_params(args, 2, -1) == -1)
         return -1;
 
-    fprintf(stderr, "loading %s ...", args[1]);
+    char *file = realpath(args[1], NULL);
+    fprintf(stderr, "loading %s ...", file);
     fflush(stdout);
 
     empty_debug_infos(dinfos);
@@ -23,9 +24,10 @@ int load_file(struct debug_infos *dinfos, char *args[])
     dinfos->melf.elf  = elf;
     dinfos->melf.size = size;
     dinfos->args      = dup_args(args + 1);
+    free(dinfos->args[0]);
+    dinfos->args[0] = file;
 
     fprintf(stderr, "done\n");
-    find_symbol(dinfos->melf.elf);
     return 0;
 }
 

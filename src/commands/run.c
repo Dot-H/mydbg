@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "commands.h"
+#include "maps.h"
 #include "my_dbg.h"
 #include "trace.h"
 #include "dproc.h"
@@ -28,6 +30,9 @@ int do_run(struct debug_infos *dinfos, char *args[])
     proc->pid = pid;
     dproc_htable_insert(proc, dinfos->dproc_table);
     dinfos->dflt_pid = pid;
+    dinfos->maps_table = parse_maps(pid);
+    if (!dinfos->maps_table)
+        goto out_destroy_proc;
 
     return pid;
 

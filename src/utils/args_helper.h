@@ -37,7 +37,8 @@ long arg_to_long(char *arg, int base);
 ** \args Null terminated array of string
 **
 ** \brief Check if the number of string inside args is inside
-** [\p min, \p max].
+** [\p min, \p max]. If \p max is equal to -1, max is not taken
+** into account
 **
 ** \return Return -1 if args is not valid and its size otherwise.
 **
@@ -45,7 +46,7 @@ long arg_to_long(char *arg, int base);
 ** args, it is taken into account. If args is not valid, a message
 ** is print on stderr.
 */
-int check_params(char *args[], size_t min, size_t max);
+int check_params(char *args[], long min, long max);
 
 /**
 ** \return Returns 1 if the the process is running and 0 otherwise.

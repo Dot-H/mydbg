@@ -16,6 +16,7 @@ struct debug_infos {
     struct melf melf;
 
     pid_t  dflt_pid; /* Current default pid */
+    struct htable *maps_table; /* Infos about r-xp files from /proc/$PID/maps */
     struct htable *dproc_table; /* Hash table containing running process */
     struct htable *bp_table; /* Hash table containing all active breakpoints */
 };

@@ -29,13 +29,13 @@ long arg_to_long(char *arg, int base)
     return res;
 }
 
-int check_params(char *args[], size_t min, size_t max)
+int check_params(char *args[], long min, long max)
 {
     if (!args && min == 1)
         return 1;
 
-    size_t size = nullarray_size(args);
-    if (size > max) {
+    long size = nullarray_size(args);
+    if (max != -1 && size > max) {
         fprintf(stderr, "Too many arguments\n");
         return -1;
     } else if (size < min) {
