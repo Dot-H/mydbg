@@ -7,11 +7,12 @@
 #include "my_dbg.h"
 #include "breakpoint.h"
 #include "mapping.h"
+#include "maps.h"
 
 int do_breakf(struct debug_infos *dinfos, char *args[])
 {
-//    if (!is_running(dinfos))
-  //      return -1;
+    if (!is_running(dinfos))
+        return -1;
 
     int argsc = check_params(args, 2, 2);
     if (argsc == -1)
@@ -21,14 +22,21 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
     if (!symbol)
         return -1;
 
-    if (symbol) {
-        printf("FOUND\n");
-        printf("0x%lx\n", symbol->st_value);
+    if (!symbol) {
+        printf("Could not found: %s\n", args[1]);
     }
-    else
-        printf("NOT FOUND\n");
 
-    return 0;
+    struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);
+    if (!procmap)
+        return -1;
+
+    long dyn_addr = arg_to_long(procmap->line, 16);
+    if (dyn_addr == -1)
+        return -1;
+
+    uintptr_t bp_addr = dyn_addr + symbol->st_value;
+    struct breakpoint *bp = bp_creat(BP_CLASSIC);
+    return bp_set(dinfos, bp, (void *)bp_addr, dinfos->dflt_pid);
 }
 
 shell_cmd(breakf, do_breakf, "Put a breakpoint on the function given in argument");

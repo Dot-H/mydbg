@@ -55,29 +55,18 @@ int print_regs(struct dproc *proc)
 
 int do_info_regs(struct debug_infos *dinfos, char *args[])
 {
-    (void)args;
-    /* TODO pid in argument */
+    if (!is_running(dinfos))
+        return -1;
 
-    const char *err_msg = NULL;
-    if (!dinfos->melf.elf || !dinfos->dflt_pid) {
-        err_msg = "No running process";
-        goto err_print_msg;
-    }
+    int argsc = check_params(args, 1, 2);
+    if (argsc == -1)
+        return -1;
 
-    struct dproc *proc = dproc_htable_get(dinfos->dflt_pid,
-                                          dinfos->dproc_table);
-    if (!proc) {
-        err_msg = "Process does not exists";
-        goto err_process;
-    }
+    struct dproc *proc = get_proc(dinfos, args, argsc, 1);
+    if (!proc)
+        return -1;
 
     return print_regs(proc);
-
-err_process:
-    fprintf(stderr, "Could no get registers of %d:", dinfos->dflt_pid);
-err_print_msg:
-    fprintf(stderr, "%s\n", err_msg);
-    return -1;
 }
 
 shell_cmd(info_regs, do_info_regs, "Print the studied process's registers");

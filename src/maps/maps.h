@@ -6,7 +6,7 @@
 
 # include "hash_table.h"
 
-# define MAP_HTABLE_SIZE 64
+# define MAP_HTABLE_SIZE 32
 
 /* Used for parsing */
 # define PATH_MAX_LEN 23
@@ -38,7 +38,34 @@ struct map {
 */
 void map_destroy(struct map *map);
 
-struct htable *parse_maps(pid_t pid);
+/**
+** \brief fill the offsets of \p mapd_line
+**
+** \return Return -1 if the attribute line inside \p mapd_line
+** has not NOFTS columns. Return 0 otherwise.
+*/
+int get_offsets(struct map *mapd_line);
+
+/**
+** \brief try to parse a line from a /proc/pid/maps.
+**
+** \return NULL is returned If the line is invalid or
+** an if inode is equal to 0. If the stream has been entirely
+** consumed, the macro END is returned.
+*/
+struct map *map_line(FILE *maps);
+
+/**
+** \brief Fills \p maps_table with the r-xp areas given by 
+** /proc/[pid]/maps. In case of failure, the hashtable given in
+** argument is untouched.
+**
+** \return 0 if \p maps_table is filled and -1 otherwise.
+**
+** \note An error message is printed on stderr if something went
+** wrong.
+*/
+int parse_maps(struct htable *maps_table, pid_t pid);
 
 /****************************************/
 /*      Wrappers to struct htable       */

@@ -5,7 +5,7 @@
 
 #include "maps.h"
 
-FILE *open_maps(pid_t pid)
+static FILE *open_maps(pid_t pid)
 {
     char maps_path[PATH_MAX_LEN];
     sprintf(maps_path, "/proc/%d/maps", pid);
@@ -19,12 +19,6 @@ FILE *open_maps(pid_t pid)
     return maps;
 }
 
-/**
-** \brief fill the offsets of \p mapd_line
-**
-** \return Return -1 if the attribute line inside \p mapd_line
-** has not NOFTS columns. Return 0 otherwise.
-*/
 int get_offsets(struct map *mapd_line)
 {
     char *saveptr;
@@ -46,13 +40,6 @@ int get_offsets(struct map *mapd_line)
     return 0;
 }
 
-/**
-** \brief try to parse a line from a /proc/pid/maps.
-**
-** \return NULL is returned If the line is invalid or
-** an if inode is equal to 0. If the stream has been entirely
-** consumed, the macro END is returned.
-*/
 struct map *map_line(FILE *maps)
 {
     char *line = NULL;
@@ -79,25 +66,11 @@ struct map *map_line(FILE *maps)
     return mapd_line;
 }
 
-/**
-** \brief Create a hash table and fills it with the r-xp areas
-** given by /proc/[pid]/maps
-**
-** \return Return the filled hash table on success and NULL in
-** case of failure
-**
-** \note An error message is printed on stderr if something went
-** wrong.
-*/
-struct htable *parse_maps(pid_t pid)
+int parse_maps(struct htable *maps_table, pid_t pid)
 {
     FILE *maps = open_maps(pid);
     if (!maps)
-        return NULL;
-
-    struct htable *maps_table = map_htable_creat();
-    if (!maps_table)
-        goto err_close_free;
+        return -1;
 
     struct map *line = map_line(maps);
     while (line != END) {
@@ -110,13 +83,7 @@ struct htable *parse_maps(pid_t pid)
     }
 
     fclose(maps);
-    return maps_table;
-
-err_close_free:
-    fprintf(stderr, "Could not parse /proc/%d/maps", pid);
-    fclose(maps);
-    map_htable_destroy(maps_table);
-    return NULL;
+    return 0;
 }
 
 
@@ -164,7 +131,7 @@ void map_htable_reset(struct htable *htable)
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
 
-            wl_list_remove(&pos->link);
+            wl_list_remove(&tmp->link);
             map_destroy(tmp->value);
             free(tmp);
             ++j;

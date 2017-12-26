@@ -30,8 +30,8 @@ int do_run(struct debug_infos *dinfos, char *args[])
     proc->pid = pid;
     dproc_htable_insert(proc, dinfos->dproc_table);
     dinfos->dflt_pid = pid;
-    dinfos->maps_table = parse_maps(pid);
-    if (!dinfos->maps_table)
+
+    if (parse_maps(dinfos->maps_table, pid) == -1)
         goto out_destroy_proc;
 
     return pid;

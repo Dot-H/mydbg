@@ -19,6 +19,30 @@ struct breakpoint *bp_creat(enum bp_type type)
     return new;
 }
 
+int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
+           void *bp_addr, pid_t pid)
+{
+    bp->a_pid = pid;
+    bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
+    if (bp->sv_instr == -1)
+        goto out_destroy_bp;
+
+    bp->addr  = bp_addr;
+    bp->state = BP_ENABLED;
+
+    if (bp_htable_insert(bp, dinfos->bp_table) == -1)
+    {
+        fprintf(stderr, "A breakpoint is already set at %p\n",  bp_addr);
+        goto out_destroy_bp;
+    }
+
+    return 0;
+
+out_destroy_bp:
+    bp_destroy(bp);
+    return -1;
+}
+
 int bp_destroy(struct breakpoint *bp)
 {
     if (!bp)
@@ -100,8 +124,8 @@ void bp_htable_reset(struct htable *htable)
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
 
-            if (bp_destroy(tmp->value)) /* If it's fail, we are screwed */
-                wl_list_remove(&pos->link);
+            if (bp_destroy(tmp->value)) /* If it fails, we are screwed */
+                wl_list_remove(&tmp->link);
 
             free(tmp);
             ++j;

@@ -47,6 +47,19 @@ struct breakpoint {
 */
 struct breakpoint *bp_creat(enum bp_type);
 
+/*
+** \brief Fill \p bp with \p bp_addr, \p pid and BP_ENABLED
+** before setting the BP_OPCODE in the process \p pid. Also
+** insert the breakpoint in the bp_table from \p dinfos. If
+** something goes wrong, \p bp is free.
+**
+** \return Return 0 if everything went fine and -1 on error.
+**
+** \note An error message is print on stderr in case of error.
+*/
+int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
+           void *bp_addr, pid_t pid);
+
 /**
 ** \brief Free all the allocated memory inside \p htable and reset
 **  all its attributes.
