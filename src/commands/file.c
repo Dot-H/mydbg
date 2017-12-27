@@ -18,8 +18,10 @@ int load_file(struct debug_infos *dinfos, char *args[])
     empty_debug_infos(dinfos);
     size_t size = 0;
     void *elf   = map_elf(args[1], &size);
-    if (!elf)
+    if (!elf) {
+        free(file);
         return -1;
+    }
 
     dinfos->melf.elf  = elf;
     dinfos->melf.size = size;

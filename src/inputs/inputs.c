@@ -54,7 +54,6 @@ static void update_history(int ret, void *ptr_home_hist)
 
 
 /**
-** \fn char **completion(const char *text, size_t start, size_t end)
 ** \param text Word to complete
 ** \param start Start of the buffer containing the word to complete
 ** \param end End of the buffer containing the word to complete
@@ -73,7 +72,6 @@ static char **completion(const char *text, int start, int end)
 
     return matches;
 }
-
 
 void init_interaction(void)
 {

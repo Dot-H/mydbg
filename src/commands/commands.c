@@ -23,12 +23,9 @@ char *cmd_generator(const char *text, int state)
     }
 
     while ((name = __start_cmds[idx].name)){
-
         idx++;
-
-        if (strncmp(name, text, len) == 0){
+        if (strncmp(name, text, len) == 0)
               return strdup(name);
-        }
     }
 
     return NULL;

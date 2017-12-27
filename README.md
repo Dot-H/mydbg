@@ -52,6 +52,10 @@ Commands
 
     break_list      List all the breakpoints
 
+    break_del
+            [ID]    Delete the breakpoint corresponding to the id given in
+                    argument.
+
     continue
             [PID]   Continue the execution of the pid given in argument.
 

@@ -139,6 +139,16 @@ struct breakpoint *bp_htable_get(void *addr, struct htable *htable);
 
 void bp_htable_remove(struct breakpoint *bp, struct htable *htable);
 
+/**
+** \brief Search through the htable a breakpoint with an id equals to
+** \p id. The breakpoint, if found, is destroyed and removed from
+** \p htable.
+**
+** \return Return -1 if \p id does not correspond to an existing breakpoint
+** and 0 if the corresponding breakpoint has been found and removed.
+*/
+int bp_htable_remove_by_id(long id, struct htable *htable);
+
 int bp_htable_insert(struct breakpoint *bp, struct htable *htable);
 
 #endif /* !BREAKPOINT_H */

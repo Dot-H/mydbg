@@ -46,7 +46,7 @@ int print_bps(struct debug_infos *dinfos, char *args[])
 
     struct htable *htable = dinfos->bp_table;
     const char *grammar = htable->nmemb > 1 ? "are" : "is";
-    printf("%zu breakpoint %s put\n", htable->nmemb, grammar);
+    printf("%zu breakpoints %s put\n", htable->nmemb, grammar);
 
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {

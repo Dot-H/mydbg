@@ -127,7 +127,7 @@ void bp_htable_reset(struct htable *htable)
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
 
-            if (bp_destroy(tmp->value)) /* If it fails, we are screwed */
+            if (!bp_destroy(tmp->value)) /* If it fails, we are screwed */
                 wl_list_remove(&tmp->link);
 
             free(tmp);
@@ -164,6 +164,31 @@ void bp_htable_remove(struct breakpoint *bp, struct htable *htable)
 
     bp_destroy(poped->value);
     free(poped);
+}
+
+int bp_htable_remove_by_id(long id, struct htable *htable)
+{
+    if (id < 1)
+        return -1; 
+
+    for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
+    {
+        struct wl_list *head = &htable->array[i].link;
+        struct data *tmp;
+        wl_list_for_each(tmp, head, link) {
+            struct breakpoint *bp = (struct breakpoint *)tmp->value;
+            if (bp->id == id && !bp_destroy(tmp->value)) {
+                wl_list_remove(&tmp->link);
+                free(tmp);
+                htable->nmemb -= 1;
+                return 0;
+            }
+
+            ++j;
+        }
+    }
+
+    return -1;
 }
 
 int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
