@@ -64,7 +64,7 @@ static int interaction(struct debug_infos *dinfos)
 
     char *line = NULL;
     while ((line = get_line())) {
-        char **args = build_args(line);
+        char **args = build_cmd(line);
         if (!args)
             goto cont_free;
 

@@ -19,11 +19,9 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
         return -1;
 
     const Elf64_Sym *symbol = find_symbol(dinfos->melf.elf, args[1]);
-    if (!symbol)
-        return -1;
-
     if (!symbol) {
         printf("Could not found: %s\n", args[1]);
+        return -1;
     }
 
     struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);

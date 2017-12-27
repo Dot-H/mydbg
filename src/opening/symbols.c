@@ -23,7 +23,7 @@ static inline void *add_oft(void *addr, uint64_t oft)
     return ret + oft;
 }
 
-void get_sh_infos(Elf64_Ehdr *header, Elf64_Shdr *shdr, 
+void get_sh_infos(Elf64_Ehdr *header, Elf64_Shdr *shdr,
                   uint16_t *shnum, uint16_t *shstrndx)
 {
     if (header->e_shnum)
@@ -84,7 +84,7 @@ const Elf64_Sym *gnu_lookup(const char *strtab, const Elf64_Sym *symtab,
 
 const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
 {
-    if (!header->e_shoff || !header->e_shentsize || 
+    if (!header->e_shoff || !header->e_shentsize ||
         header->e_shstrndx == SHN_UNDEF)
         return NULL;
 
@@ -97,13 +97,12 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
 
     Elf64_Sym *dynsymtab = NULL;
     Elf64_Sym *symtab = NULL;
-    char *shstrtab = add_oft(header, shdr[shstrndx].sh_offset); 
-    char *dynstrtab;
-    char *strtab;
+    char *shstrtab = add_oft(header, shdr[shstrndx].sh_offset);
+    char *dynstrtab = NULL;
+    char *strtab = NULL;
 
-    struct gnu_table *gnutable;
     uint64_t dynsize;
-    Elf64_Dyn *dynamic;
+    Elf64_Dyn *dynamic = NULL;
     for(uint16_t i = header->e_shnum - 1; i > 0; --i){
         char* name = shstrtab + shdr[i].sh_name;
         printf("%s\n",name);
@@ -117,10 +116,7 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
         } else if (!strcmp(name, ".symtab")) {
             printf("found dynamic: %s\n", name);
             symtab = add_oft(header, shdr[i].sh_offset);
-        }/* else if (!strcmp(name, ".gnu.hash")) {
-            printf("found hash: %s\n", name);
-            gnutable = add_oft(header, shdr[i].sh_offset);
-        }*/
+        }
 
     }
 #if 0
@@ -151,7 +147,10 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
      }
 
 #endif
-    struct r_debug *r_debug = NULL;
+    if (!dynamic)
+        return NULL;
+
+    struct gnu_table *gnutable = NULL;
     for (uint64_t i = 0; dynamic[i].d_tag != DT_NULL; ++i)
     {
         if (dynamic[i].d_tag == DT_GNU_HASH) {
@@ -163,11 +162,6 @@ const Elf64_Sym *find_symbol(Elf64_Ehdr *header, const char *name)
         } else if (dynamic[i].d_tag == DT_SYMTAB) {
             printf("Found dynsymtab at %zu\n", i);
             dynsymtab = add_oft(header, dynamic[i].d_un.d_ptr);
-        } else if (dynamic[i].d_tag == DT_DEBUG) {
-            printf("Coucou\n");
-            r_debug = (struct r_debug *)dynamic[i].d_un.d_ptr;
-            if (r_debug)
-                printf("version: %d\n", r_debug->r_version);
         }
     }
     dynsize = dynsize;

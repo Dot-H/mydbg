@@ -37,6 +37,15 @@ struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
                                     int (*key_cmp)(void *, void *));
 
 /**
+** \brief Expand \p htable's array by 50% and relocate all the data
+** stored inside.
+**
+** \note If the reallocation failed, an error is printed on stderr;
+** Nothing is done and the htable is left untouched.
+*/
+void htable_extend(struct htable *htable);
+
+/**
 ** \param key Key to search inside \p htable
 **
 ** \brief Search a matching key inside the htable.

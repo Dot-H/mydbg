@@ -30,7 +30,7 @@ void init_interaction(void);
 **
 ** \return Returns the newly allocated array of string
 */
-char **build_args(char *text);
+char **build_cmd(char *text);
 
 /**
 ** \param args Null terminated array to duplicate

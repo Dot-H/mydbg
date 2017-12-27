@@ -40,6 +40,7 @@ int do_break(struct debug_infos *dinfos, char *args[])
     void *bp_addr = get_addr(dinfos, args, argsc);
     if (!bp_addr)
         return -1;
+
     struct breakpoint *bp = bp_creat(btype);
     return bp_set(dinfos, bp, bp_addr, dinfos->dflt_pid);
 }

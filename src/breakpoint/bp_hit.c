@@ -40,8 +40,6 @@ static void *get_stopped_addr(struct dproc *proc)
 static int hit_reset(struct debug_infos *dinfos, struct breakpoint *bp,
                      struct dproc *proc)
 {
-    printf("Hit reset breakpoint %u at %p\n", bp->id, bp->addr);
-
     if (set_opcode(proc->pid, bp->sv_instr, bp->addr) == -1)
         goto err_reset_bp;
 

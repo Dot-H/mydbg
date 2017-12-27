@@ -106,8 +106,11 @@ char *strip_whitespace(char *str)
     return str + idx;
 }
 
-char **build_args(char *text)
+char **build_cmd(char *text)
 {
+    if (!text || !*text)
+        return NULL;
+
     size_t cpcity = ARG_REALLOC;
     char **args   = malloc(sizeof(char *) * cpcity);
     if (!args)

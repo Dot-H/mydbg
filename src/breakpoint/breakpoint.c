@@ -31,10 +31,7 @@ int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
     bp->state = BP_ENABLED;
 
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)
-    {
-        fprintf(stderr, "A breakpoint is already set at %p\n",  bp_addr);
         goto out_destroy_bp;
-    }
 
     return 0;
 
@@ -167,8 +164,8 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
 {
     int ret = htable_insert(htable, bp, bp->addr);
     if (ret == -1){
-        fprintf(stderr, "Process %p is already present in the hashtable",
-                bp->addr);
+        fprintf(stderr, "A breakpoint is already set at %p\n", bp->addr);
+        return -1;
     }
 
     if (bp->type != BP_RESET) {
@@ -176,6 +173,8 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
         ++bp_id;
     }
 
-    printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
+    if (bp->type != BP_RESET)
+        printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
+
     return ret;
 }

@@ -8,16 +8,17 @@ portability:
 
 commands:
     [ ] passing argument to run
+    [ ] reset all pids in bp_table when running again
     [ ] replace binary by its absolute path
     [ ] add pid argument to break
     [ ] examine $d
     [ ] examine $s: escape non printable arguments
     [ ] argument N to singlestep and next_instr
-    [ ] reset all pids in bp_table when running again
+
+breakpoints:
+    [ ] breakf on not exported functions
+    [ ] completion on breakf
 
 global:
     [ ] check for running process before reset binary
         [ ] Ask "want to kill %d process" when quit / file / run arg
-
-utils:
-    [ ] expand hash_table when necessary

@@ -3,6 +3,22 @@
 
 #include "hash_table.h"
 
+static struct data *init_array(size_t size)
+{
+    struct data *array = malloc(size * sizeof(struct data));
+    if (!array) {
+        warn("Failed to allocate the htable's array of size %zu", size);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < size; ++i){
+        array[i].key = NULL;
+        array[i].value = NULL;
+        wl_list_init(&array[i].link);
+    }
+
+    return array;
+}
 
 struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
                                     int (*key_cmp)(void *, void *))
@@ -15,17 +31,38 @@ struct htable *htable_creat(size_t (*hash_func)(void *), size_t size,
     h->size      = size;
     h->hash_func = hash_func;
     h->key_cmp   = key_cmp;
-    h->array     = malloc(size * sizeof(struct data));
-    if (!h->array)
-        err(1, "Failed to allocate the htable's array of size %zu", size);
-
-    for (size_t i = 0; i < size; ++i){
-        h->array[i].key = NULL;
-        h->array[i].value = NULL;
-        wl_list_init(&h->array[i].link);
-    }
+    h->array     = init_array(size);
+    if (!h->array) /* Catastrophic */
+        exit(1);
 
     return h;
+}
+
+void htable_extend(struct htable *htable)
+{
+    htable->size += htable->size / 2 + 1;
+    struct data *newarray = init_array(htable->size);
+    if (!newarray) /* Not catastrophic */
+        return;
+
+    for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
+    {
+        struct wl_list *head = &htable->array[i].link;
+        struct data *pos    = wl_container_of(head->next, pos, link);
+        while (&pos->link != head)
+        {
+            struct data *tmp = pos;
+            pos = wl_container_of(pos->link.next, pos, link);
+            wl_list_remove(&tmp->link);
+
+            size_t idx = htable->hash_func(tmp->key) % htable->size;
+            wl_list_insert(&newarray[idx].link, &tmp->link);
+            ++j;
+        }
+    }
+
+    free(htable->array);
+    htable->array = newarray;
 }
 
 struct data *htable_get(const struct htable *htable, void *key)
@@ -81,36 +118,8 @@ int htable_insert(struct htable *htable, void *value, void *key)
     wl_list_insert(&htable->array[idx].link, &new->link);
     htable->nmemb += 1;
 
+    if ((float)htable->size / (float)htable->nmemb >= 0.85)
+        htable_extend(htable);
+
     return 0;
 }
-
-
-#if 0
-__attribute__((__visibility__("hidden")))
-void *htable_realloc(struct htable *htable, void *ptr,
-                         size_t size)
-{
-  struct pair_list *tmp = htable_get(htable, ptr);
-  assert(tmp);
-
-  size_t page_size = sysconf(_SC_PAGESIZE);
-  size = (my_log2(size, page_size) + 1) * sysconf(_SC_PAGESIZE);
-
-  size_t old_size = (tmp->size & ~(MAX_SIZE))  * page_size;
-  void *new = mremap(ptr, old_size, size, MREMAP_MAYMOVE);
-
-  if (new == MAP_FAILED)
-    return NULL;
-
-  if (tmp != new)
-  {
-    htable_pop(htable, ptr, 0);
-    htable_insert(htable, new, size);
-    return new;
-  }
-
-  tmp->size  = size;
-
-  return new;
-}
-#endif

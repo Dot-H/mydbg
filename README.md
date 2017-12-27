@@ -47,6 +47,9 @@ Commands
                     any and on the current address otherwise. A temporary is
                     hit only one time before being trash.
 
+    breakf  [FUNC]  Put a breakpoint on the address of the function given in
+                    argument.
+
     break_list      List all the breakpoints
 
     continue

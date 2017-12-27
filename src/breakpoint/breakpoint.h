@@ -9,7 +9,7 @@
 # include "my_dbg.h"
 
 #define TRAP_BRKPT 1
-#define BP_HTABLE_SIZE 128
+#define BP_HTABLE_SIZE 10
 #define BP_OPCODE 0xcc
 
 /**
