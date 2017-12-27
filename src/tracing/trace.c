@@ -62,22 +62,6 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
         goto err_empty_dinfos;
 
     if (pid == 0) {
-        struct r_debug *dbg = NULL;
-        for (Elf64_Dyn *dyn = _DYNAMIC; dyn->d_tag != DT_NULL; ++dyn)
-            if (dyn->d_tag == DT_DEBUG) {
-                dbg = (struct r_debug *) dyn->d_un.d_ptr;
-                printf("Found r_debug\n");
-            }
-        if (dbg) {
-            printf("l_brk: 0x%lx\n", dbg->r_brk);
-            printf("l_addr: 0x%lx\n", dbg->r_map->l_addr);
-            for (struct link_map *lm = dbg->r_map->l_next;
-                 lm != dbg->r_map->l_next;
-                 lm = lm->l_next)
-                printf("0x%lx\n", lm->l_addr);
-        }
-
-
         if (ptrace(PTRACE_TRACEME, 0, 0, 0) == -1)
             goto err_print_errno;
 
@@ -113,14 +97,14 @@ long set_opcode(pid_t pid, long opcode, void *addr)
 {
     long saved_data = ptrace(PTRACE_PEEKTEXT, pid, addr, NULL);
     if (saved_data == -1) {
-        if (errno == ESRCH)
+        if (errno == ESRCH) // Process finished
             return 0;
 
         warn("Failed to PEEKTEXT %d at %p", pid, addr);
         return -1;
     }
 
-    printf("peeked %lx\n", saved_data);
+//    printf("peeked %lx\n", saved_data);
 
     opcode &= 0xff;
     long new_data = ((saved_data & ~(0xff)) | opcode);
@@ -129,7 +113,7 @@ long set_opcode(pid_t pid, long opcode, void *addr)
         return -1;
     }
 
-    printf("poked %lx\n", new_data);
+//    printf("poked %lx\n", new_data);
 
     return saved_data & 0xff;
 }

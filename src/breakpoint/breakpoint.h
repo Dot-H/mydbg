@@ -96,14 +96,28 @@ int bp_destroy(struct breakpoint *bp);
 int bp_hit(struct debug_infos *dinfos, struct dproc *proc);
 
 /**
-** \brief Creates a reset breakpoint from \p bp and insert it both
-** in the process \proc and in \p htable.
+** \param dinfos Envirnment containing the breakpoint table.
+** \param proc Process whose received the SIGTRAP
+** \param bp breakpoint whose provocted the SIGTRAP
 **
-** \return return a positive value on success and -1 on error.
+** \brief Singlestep the current instruction and replace the
+** breakpoint.
 **
-** \note In case of error, a message is print on stderr.
+** \return Return 0 if everything went fine and -1 otherwise.
 */
-int bp_create_reset(struct htable *htable, struct breakpoint *bp);
+
+int bp_reset(struct debug_infos *dinfos, struct breakpoint *bp,
+             struct dproc *proc);
+
+/**
+** \brief Test if \p proc was stopped by a breakpoint and if it
+** was, reset the breakpoint with bp_reset. Otherwise, does
+** nothing.
+**
+** \return Return -1 if something went wrong while reseting a
+** breakpoint and 0 otherwise.
+*/
+int bp_cont(struct debug_infos *dinfos, struct dproc *proc);
 
 /****************************************/
 /*      Wrappers to struct htable       */

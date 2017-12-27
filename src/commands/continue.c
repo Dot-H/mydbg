@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ptrace.h>
+#include <sys/user.h>
 
 #include "commands.h"
 #include "my_dbg.h"
@@ -21,6 +22,9 @@ int do_continue(struct debug_infos *dinfos, char *args[])
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 1);
     if (!proc)
+        return -1;
+
+    if (bp_cont(dinfos, proc) == -1)
         return -1;
 
     int ret = -1;

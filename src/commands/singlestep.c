@@ -23,6 +23,9 @@ int do_singlestep(struct debug_infos *dinfos, char *args[])
     if (!proc)
         return -1;
 
+    if (bp_cont(dinfos, proc) == -1)
+        return -1;
+
     int ret = -1;
     if ((ret = ptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0) == -1))
         warn("Could not singlestep in %d", proc->pid);

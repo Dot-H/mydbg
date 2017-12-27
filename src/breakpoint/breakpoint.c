@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/ptrace.h>
+#include <sys/user.h>
 
 #include "breakpoint.h"
 #include "my_dbg.h"
@@ -53,32 +55,36 @@ int bp_destroy(struct breakpoint *bp)
     return 0;
 }
 
-int bp_create_reset(struct htable *htable, struct breakpoint *father)
+int bp_reset(struct debug_infos *dinfos, struct breakpoint *bp,
+             struct dproc *proc)
 {
-    struct breakpoint *bp_rst = malloc(sizeof(struct breakpoint));
-    if (!bp_rst)
-        err(1, "Cannot allocate memory for reset breakpoint\n");
+    if (ptrace(PTRACE_SINGLESTEP, proc->pid, 0, 0) == -1) {
+        warn("Could not singlestep");
+        return -1;
+    }
 
-    bp_rst->count = 0;
-    bp_rst->id    = father->id;
-    bp_rst->type  = BP_RESET;
-    bp_rst->a_pid = father->a_pid;
-    bp_rst->state = BP_ENABLED;
+    wait_tracee(dinfos, proc);
+    bp->state = BP_ENABLED;
 
-    bp_rst->addr = (void *)((uintptr_t)father->addr + 1);
-    bp_rst->sv_instr = set_opcode(bp_rst->a_pid, BP_OPCODE, bp_rst->addr);
-    if (bp_rst->sv_instr == -1)
-        goto out_destroy_bp_rst;
-
-    if (bp_htable_insert(bp_rst, htable) == -1)
-        goto out_destroy_bp_rst;
+    if (set_opcode(proc->pid, BP_OPCODE, bp->addr) == -1)
+        return -1;
 
     return 0;
+}
 
-out_destroy_bp_rst:
-    fprintf(stderr, "Failed to create reset pointer");
-    bp_destroy(bp_rst);
-    return -1;
+int bp_cont(struct debug_infos *dinfos, struct dproc *proc)
+{
+    struct user_regs_struct regs;
+    if (ptrace(PTRACE_GETREGS, proc->pid, 0, &regs) == -1) {
+        warn("Could not get registers");
+        return -1;
+    }
+
+    struct breakpoint *bp = bp_htable_get((void *)regs.rip, dinfos->bp_table);
+    if (bp)
+        return bp_reset(dinfos, bp, proc);
+
+    return 0;
 }
 
 /**

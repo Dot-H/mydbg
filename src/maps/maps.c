@@ -76,9 +76,7 @@ int parse_maps(struct htable *maps_table, pid_t pid)
     while (line != END) {
         if (line && map_htable_insert(line, maps_table) == -1)
             map_destroy(line);
-        else
-            if (line)
-                printf("Insert: %s\n", line->line + line->ofts[NOFTS - 1]);
+
         line = map_line(maps);
     }
 
@@ -172,8 +170,6 @@ void map_htable_remove(struct map *map, struct htable *htable)
 int map_htable_insert(struct map *map, struct htable *htable)
 {
     int ret = htable_insert(htable, map, map->line + map->ofts[NOFTS - 1]);
-    if (ret == -1)
-        fprintf(stderr, "Ignored %s\n", map->line + map->ofts[NOFTS - 1]);
 
     return ret;
 }

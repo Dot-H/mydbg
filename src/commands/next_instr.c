@@ -94,6 +94,9 @@ int do_ni(struct debug_infos *dinfos, char *args[])
     if (!proc)
         return -1;
 
+    if (bp_cont(dinfos, proc) == -1)
+        return -1;
+
     uintptr_t bp_addr = (uintptr_t)get_stopped_addr(proc);
     char *dumped = read_dproc(dinfos, proc, 8, bp_addr);
     if (!dumped)
