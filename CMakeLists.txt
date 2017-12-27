@@ -4,7 +4,7 @@ project(MY_DBG C)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_C_FLAGS "-Wall -Wextra -Werror -std=c99 -pedantic -D_DEFAULT_SOURCE \
         -lunwind-ptrace -lunwind-x86_64 -lunwind")#-fsanitize=address")
-include_directories("src/" "src/opening" "src/inputs" "src/commands" "\
+include_directories("src/" "src/elf" "src/inputs" "src/commands" "\
         src/tracing" "src/utils" "src/dbgprocess" "src/breakpoint" "\
         src/print" "src/maps")
 
@@ -31,8 +31,8 @@ set(SRC
         src/inputs/inputs.c
         src/maps/maps.c
         src/my_dbg.c
-        src/opening/mapping.c
-        src/opening/symbols.c
+        src/elf/mapping.c
+        src/elf/symbols.c
         src/print/print_func.c
         src/tracing/trace.c
         src/utils/args_helper.c
@@ -41,5 +41,4 @@ set(SRC
   )
 
 add_executable(my_dbg ${SRC})
-include_directories(src src/opening)
 target_link_libraries(my_dbg readline unwind capstone)

@@ -18,7 +18,7 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
     if (argsc == -1)
         return -1;
 
-    const Elf64_Sym *symbol = find_symbol(dinfos->melf.elf, args[1]);
+    const Elf64_Sym *symbol = find_symbol(dinfos->melf, args[1]);
     if (!symbol) {
         printf("Could not found: %s\n", args[1]);
         return -1;

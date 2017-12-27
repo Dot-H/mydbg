@@ -5,7 +5,7 @@
 
 #define array_size(t) (sizeof(t) / sizeof(*t))
 
-struct print_func print_functions[] = { 
+struct print_func print_functions[] = {
     { 'x', hexa_print },
     { 'd', decimal_print },
     { 's', string_print },
@@ -17,7 +17,7 @@ int is_valid_format(char *format)
     if (!format || !format[1] || format[2])
         return 0;
 
-   size_t len = array_size(print_functions); 
+   size_t len = array_size(print_functions);
    for (size_t i = 0; i < len; ++i)
        if (format[1] == print_functions[i].format)
            return 1;
@@ -27,7 +27,7 @@ int is_valid_format(char *format)
 
 void (*get_print_func(char format))(char *, size_t, uintptr_t)
 {
-   size_t len = array_size(print_functions); 
+   size_t len = array_size(print_functions);
    for (size_t i = 0; i < len; ++i)
        if (format == print_functions[i].format)
            return print_functions[i].func;

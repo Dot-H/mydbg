@@ -15,7 +15,8 @@ struct htable
     size_t size;  /* Current number of cell in the array */
 
     size_t (*hash_func)(void *); /* Function used to hash the key */
-    int (*key_cmp)(void *, void *); /* Function used to compare the key */
+    int (*key_cmp)(void *, void *); /* Function used to compare the key,
+                                       return 1 if keys match */
     struct data *array; /* Array of sentinels to the data */
 };
 

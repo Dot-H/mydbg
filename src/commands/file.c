@@ -12,7 +12,7 @@ int load_file(struct debug_infos *dinfos, char *args[])
         return -1;
 
     char *file = realpath(args[1], NULL);
-    fprintf(stderr, "loading %s ...", file);
+    fprintf(stderr, KBLU"loading %s ...\n"KNRM, file);
     fflush(stdout);
 
     empty_debug_infos(dinfos);
@@ -26,8 +26,9 @@ int load_file(struct debug_infos *dinfos, char *args[])
     dinfos->args      = dup_args(args + 1);
     free(dinfos->args[0]);
     dinfos->args[0] = file;
+    get_symbols(&dinfos->melf);
 
-    fprintf(stderr, "done\n");
+    fprintf(stderr, KBLU"done\n"KNRM);
     return 0;
 }
 

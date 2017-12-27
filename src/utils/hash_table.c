@@ -118,7 +118,8 @@ int htable_insert(struct htable *htable, void *value, void *key)
     wl_list_insert(&htable->array[idx].link, &new->link);
     htable->nmemb += 1;
 
-    if ((float)htable->size / (float)htable->nmemb >= 0.85)
+    float pop = (float)htable->nmemb / (float)htable->size;
+    if (pop >= 0.70)
         htable_extend(htable);
 
     return 0;

@@ -20,6 +20,7 @@ struct debug_infos *init_debug_infos(void)
     if (!dinfos)
         err(1, "Cannot allocate struct debug_infos");
 
+    dinfos->dflt_pid    = 0;
     dinfos->melf.elf    = NULL;
     dinfos->melf.size   = 0;
     dinfos->args        = NULL;
@@ -32,17 +33,13 @@ struct debug_infos *init_debug_infos(void)
 
 void empty_debug_infos(struct debug_infos *dinfos)
 {
-    if (dinfos->melf.elf && munmap(dinfos->melf.elf, dinfos->melf.size) == -1)
-        warn("Cannot unmap %p", dinfos->melf.elf);
-
     dproc_htable_reset(dinfos->dproc_table);
     bp_htable_reset(dinfos->bp_table);
     destroy_args(dinfos->args);
     map_htable_reset(dinfos->maps_table);
 
-    dinfos->args       = NULL;
-    dinfos->melf.elf   = NULL;
-    dinfos->melf.size  = 0;
+    dinfos->args = NULL;
+    reset_melf(&dinfos->melf);
 }
 
 void destroy_debug_infos(struct debug_infos *dinfos)

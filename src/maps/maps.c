@@ -172,9 +172,8 @@ void map_htable_remove(struct map *map, struct htable *htable)
 int map_htable_insert(struct map *map, struct htable *htable)
 {
     int ret = htable_insert(htable, map, map->line + map->ofts[NOFTS - 1]);
-    if (ret == -1){
+    if (ret == -1)
         fprintf(stderr, "Ignored %s\n", map->line + map->ofts[NOFTS - 1]);
-    }
- 
+
     return ret;
 }

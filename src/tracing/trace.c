@@ -120,7 +120,7 @@ long set_opcode(pid_t pid, long opcode, void *addr)
         return -1;
     }
 
-//    printf("peeked %lx\n", saved_data);
+    printf("peeked %lx\n", saved_data);
 
     opcode &= 0xff;
     long new_data = ((saved_data & ~(0xff)) | opcode);
@@ -129,7 +129,7 @@ long set_opcode(pid_t pid, long opcode, void *addr)
         return -1;
     }
 
-//    printf("poked %lx\n", new_data);
+    printf("poked %lx\n", new_data);
 
     return saved_data & 0xff;
 }

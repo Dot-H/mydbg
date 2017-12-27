@@ -64,11 +64,13 @@ static int hit_reset(struct debug_infos *dinfos, struct breakpoint *bp,
 
     if (set_opcode(proc->pid, BP_OPCODE, bp_orig->addr) == -1)
         goto err_reset_bp;
+
     bp_orig->state = BP_ENABLED;
 
     return do_continue(dinfos, NULL);
 
 err_reset_bp:
+    fprintf(stderr, "Failed to reput the origin breakpoint\n");
     set_opcode(proc->pid, BP_OPCODE, bp->addr);
     return -1;
 }
