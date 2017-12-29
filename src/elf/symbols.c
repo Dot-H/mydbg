@@ -168,9 +168,6 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
             case DT_GNU_HASH:
                 *gnutable = add_oft(header, dyn->d_un.d_ptr);
                 break;
-            case DT_SYMENT:
-                printf("dtsyment: %ld\n", dyn->d_un.d_val);
-                break;
             default:
                 break;
         }

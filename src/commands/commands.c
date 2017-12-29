@@ -11,6 +11,7 @@ static inline int is_whitespace(char c)
 char *cmd_generator(const char *text, int state)
 {
     static size_t idx;
+    static size_t list_len;
     static size_t len;
     char *name;
 
@@ -20,9 +21,10 @@ char *cmd_generator(const char *text, int state)
     if (!state){
         idx     = 0;
         len = strlen(text);
+        list_len = __stop_cmds - __start_cmds;
     }
 
-    while ((name = __start_cmds[idx].name)){
+    while (idx < list_len && (name = __start_cmds[idx].name)){
         idx++;
         if (strncmp(name, text, len) == 0)
               return strdup(name);

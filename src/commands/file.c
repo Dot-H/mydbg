@@ -12,7 +12,12 @@ int load_file(struct debug_infos *dinfos, char *args[])
         return -1;
 
     char *file = realpath(args[1], NULL);
-    fprintf(stderr, KBLU"loading %s ...\n"KNRM, file);
+    if (!file) {
+        fprintf(stderr, "%s: No such file\n", args[1]);
+        return -1;
+    }
+
+    fprintf(stderr, "loading %s ...\n", file);
     fflush(stdout);
 
     empty_debug_infos(dinfos);
@@ -30,7 +35,7 @@ int load_file(struct debug_infos *dinfos, char *args[])
     dinfos->args[0] = file;
     get_symbols(&dinfos->melf);
 
-    fprintf(stderr, KBLU"done\n"KNRM);
+    fprintf(stderr, "done\n");
     return 0;
 }
 

@@ -10,27 +10,31 @@
 #include <link.h>
 
 #include "my_dbg.h"
+#include "commands.h"
 #include "dproc.h"
 #include "breakpoint.h"
 
 static void print_status(struct dproc *proc)
 {
-    if (WIFEXITED(proc->status))
+    if (WIFEXITED(proc->status)) {
         fprintf(stderr, "%d exited normally with code %d\n", proc->pid,
                 WEXITSTATUS(proc->status));
 
-    else if (WIFCONTINUED(proc->status))
+    } else if (WIFCONTINUED(proc->status)) {
         fprintf(stderr, "%d continued\n", proc->pid);
 
-    else if (WIFSIGNALED(proc->status))
+    } else if (WIFSIGNALED(proc->status)) {
         fprintf(stderr, "%d terminates by signal %s\n", proc->pid,
                 strsignal(WSTOPSIG(proc->status)));
 
-    else if (WIFSTOPPED(proc->status))
-        fprintf(stderr, "%d stopped by signal %s\n", proc->pid,
-                strsignal(WSTOPSIG(proc->status)));
-
-    else
+    } else if (WIFSTOPPED(proc->status)) {
+        if (WSTOPSIG(proc->status) & 0x80) {
+//            fprintf(stderr, "%d hit syscall\n", proc->pid);
+            return; // Reported in bp_hit if interesting
+        } else
+            fprintf(stderr, "%d stopped by signal %s\n", proc->pid,
+                    strsignal(WSTOPSIG(proc->status)));
+    } else
         fprintf(stderr, "%d has received an unknown signal. proc->status: %d\n",
                 proc->pid, proc->status);
 }
@@ -48,8 +52,9 @@ void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
         warn("Failed to recover siginfo from %d", proc->pid);
 
 
-    if (proc->siginfo.si_signo == SIGTRAP)
-        bp_hit(dinfos, proc);
+    if (proc->siginfo.si_signo == SIGTRAP && dinfos->dflt_pid) // Run test
+        if (bp_hit(dinfos, proc) == -1)
+            do_continue(dinfos, NULL);
 }
 
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
@@ -81,6 +86,9 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
 
 
     wait_tracee(dinfos, proc);
+    if (ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD
+                                        | PTRACE_O_EXITKILL) == -1)
+        goto err_print_errno;
 
     return pid;
 

@@ -12,15 +12,11 @@
 #define BP_HTABLE_SIZE 10
 #define BP_OPCODE 0xcc
 
-/**
-** \param BP_RESET used to a breakpoint previously hit. When a BP_RESET
-** is hit, it puts a BP_OPCODE on its addr - 1 and destroys itself.
-** \note a BP_RESET id is its father's
-*/
+/* bp_type's value gives the index in the bp_handlers (bp_hit.c) */
 enum bp_type {
-    BP_CLASSIC = 0,
+    BP_CLASSIC   = 0,
     BP_TEMPORARY = 1,
-    BP_RESET = 2,
+    BP_SYSCALL   = 2,
 };
 
 enum bp_state {
@@ -29,6 +25,10 @@ enum bp_state {
     BP_HIT, // Currently hit
 };
 
+/*
+** The addr attribute of a BP_SYSCALL is its syscall number and the
+** sv_instr attribute is ignored.
+*/
 struct breakpoint {
     enum bp_type type;
     unsigned id; /* A bp has no id while it is not in the bp table */
@@ -85,7 +85,8 @@ int bp_destroy(struct breakpoint *bp);
 **
 ** \brief Search for the breakpoint which could haved caused the
 ** SIGTRAP received by \p proc. If found, the saved instruction
-** is execute and the breakpoint is actualized.
+** is execute and the breakpoint is actualized. Moreover, a message
+** is print on stdout to tell which breakpoint has been hit.
 **
 ** \return Returns 0 if a breakpoint has been found and everything
 ** went fine. Otherwise -1 is returned.
@@ -111,11 +112,14 @@ int bp_reset(struct debug_infos *dinfos, struct breakpoint *bp,
 
 /**
 ** \brief Test if \p proc was stopped by a breakpoint and if it
-** was, reset the breakpoint with bp_reset. Otherwise, does
-** nothing.
+** was, reset the breakpoint with bp_reset. Then set the ptrace
+** request if presence of BP_SYSCALL or not.
 **
 ** \return Return -1 if something went wrong while reseting a
 ** breakpoint and 0 otherwise.
+**
+** \note This function must be call before every restart of a tracee
+** stopped by a SIGSTOP.
 */
 int bp_cont(struct debug_infos *dinfos, struct dproc *proc);
 

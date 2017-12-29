@@ -27,8 +27,8 @@ const char *type_name(enum bp_type type)
             return "breakpoint";
         case BP_TEMPORARY:
             return "temporary breakpoint";
-        case BP_RESET:
-            return "reset breakpoint";
+        case BP_SYSCALL:
+            return "syscall breakpoint";
     }
 
     return "???";
@@ -45,8 +45,7 @@ int print_bps(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct htable *htable = dinfos->bp_table;
-    const char *grammar = htable->nmemb > 1 ? "are" : "is";
-    printf("%zu breakpoints %s put\n", htable->nmemb, grammar);
+    printf("%zu breakpoints are put\n", htable->nmemb);
 
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {
@@ -57,8 +56,9 @@ int print_bps(struct debug_infos *dinfos, char *args[])
             struct breakpoint *bp = tmp->value;
             const char *state = state_name(bp->state);
             const char *name  = type_name(bp->type);
-            printf("\t%s %u [%s] at %p hit %zu times\n",
-                    name, bp->id, state, bp->addr, bp->count);
+            const char *place = bp->type == BP_SYSCALL ? "on syscall" : "at";
+            printf("\t%s %u [%s] %s %p hit %zu times\n",
+                    name, bp->id, state, place, bp->addr, bp->count);
             ++j;
         }
     }
@@ -66,4 +66,4 @@ int print_bps(struct debug_infos *dinfos, char *args[])
     return 0;
 }
 
-shell_cmd(break_list, print_bps, "Prints all running process");
+shell_cmd(break_list, print_bps, "Print all the breakpoints");

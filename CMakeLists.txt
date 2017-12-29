@@ -16,6 +16,7 @@ set(SRC
         src/commands/break_del.c
         src/commands/break_list.c
         src/commands/breakf.c
+        src/commands/breaks.c
         src/commands/commands.c
         src/commands/continue.c
         src/commands/examine.c

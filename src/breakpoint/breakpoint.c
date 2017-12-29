@@ -11,11 +11,20 @@
 
 static size_t bp_id = 1;
 
+/*
+** Garbage counter for syscall breakpoints. Permits the bp wrappers
+** to handle the ptrace request set in the struct debug_infos.
+*/
+static size_t bp_nsys = 0;
+
 struct breakpoint *bp_creat(enum bp_type type)
 {
     struct breakpoint *new = calloc(1, sizeof(struct breakpoint));
     if (!new)
         err(1, "Cannot allocate memory for struct breakpoint");
+
+    if (type == BP_SYSCALL)
+        ++bp_nsys;
 
     new->type = type;
     return new;
@@ -27,17 +36,17 @@ int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
     bp->a_pid = pid;
     bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
     if (bp->sv_instr == -1)
-        goto out_destroy_bp;
+        goto err_destroy_bp;
 
     bp->addr  = bp_addr;
     bp->state = BP_ENABLED;
 
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)
-        goto out_destroy_bp;
+        goto err_destroy_bp;
 
     return 0;
 
-out_destroy_bp:
+err_destroy_bp:
     bp_destroy(bp);
     return -1;
 }
@@ -47,9 +56,12 @@ int bp_destroy(struct breakpoint *bp)
     if (!bp)
         return -1;
 
-    if (bp->type != BP_RESET && bp->sv_instr && bp->sv_instr != -1)
+    if (bp->sv_instr && bp->sv_instr != -1)
         if (set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
             return -1;
+
+    if (bp->type == BP_SYSCALL)
+        --bp_nsys;
 
     free(bp);
     return 0;
@@ -84,6 +96,7 @@ int bp_cont(struct debug_infos *dinfos, struct dproc *proc)
     if (bp)
         return bp_reset(dinfos, bp, proc);
 
+    dinfos->ptrace_req = bp_nsys ? PTRACE_SYSCALL : PTRACE_CONT;
     return 0;
 }
 
@@ -96,12 +109,12 @@ static size_t addr_hash(void *addr)
     uintptr_t key = (uintptr_t)addr;
 
     key = (~key) + (key << 21); // key = (key << 21) - key - 1;
-    key = key ^ (key >> 24);
-    key = (key + (key << 3)) + (key << 8); // key * 265
-    key = key ^ (key >> 14);
-    key = (key + (key << 2)) + (key << 4); // key * 21
-    key = key ^ (key >> 28);
-    key = key + (key << 31);
+    key = key    ^ (key >> 24);
+    key = (key   + (key << 3)) + (key << 8); // key * 265
+    key = key    ^ (key >> 14);
+    key = (key   + (key << 2)) + (key << 4); // key * 21
+    key = key    ^ (key >> 28);
+    key = key    + (key << 31);
 
     return key;
 }
@@ -137,6 +150,7 @@ void bp_htable_reset(struct htable *htable)
 
     htable->nmemb = 0;
     bp_id         = 1;
+    bp_nsys       = 0;
 }
 
 void bp_htable_destroy(struct htable *htable)
@@ -169,7 +183,7 @@ void bp_htable_remove(struct breakpoint *bp, struct htable *htable)
 int bp_htable_remove_by_id(long id, struct htable *htable)
 {
     if (id < 1)
-        return -1; 
+        return -1;
 
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {
@@ -199,12 +213,12 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
         return -1;
     }
 
-    if (bp->type != BP_RESET) {
-        bp->id = bp_id;
-        ++bp_id;
-    }
+    bp->id = bp_id;
+    ++bp_id;
 
-    if (bp->type != BP_RESET)
+    if (bp->type == BP_SYSCALL)
+        printf("Breakpoint %d set on syscall %zu\n", bp->id, (size_t)bp->addr);
+    else
         printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
 
     return ret;

@@ -3,39 +3,99 @@
 #include <signal.h>
 #include <sys/ptrace.h>
 #include <sys/user.h>
+#include <sys/reg.h>
 
 #include "breakpoint.h"
 #include "commands.h"
 #include "trace.h"
 
+#define BP_ERR (void *)-1
+
 static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
                        struct dproc *proc);
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc);
+static int hit_syscall(struct debug_infos *dinfos, struct breakpoint *bp,
+                       struct dproc *proc);
 
+/* Handlers' index is given by the value of their type */
 int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
                      struct dproc *proc) = {
     hit_classic,
     hit_temporary,
+    hit_syscall
 };
 
-static void *get_stopped_addr(struct dproc *proc)
+static struct breakpoint *bp_out_sys = NULL;
+
+/*
+** \return Return %rip on sucess and -1 on failure.
+**
+** \note An error is print on stderr in case of failure.
+*/
+static unw_word_t get_rip(struct dproc *proc)
 {
+
     if (unw_init_remote(&proc->unw.c, proc->unw.as,
                         proc->unw.ui) < 0) {
         fprintf(stderr, "Error while initing remote\n");
-        return NULL;
+        return -1;
     }
 
     unw_word_t rip;
     if (unw_get_reg(&proc->unw.c, UNW_X86_64_RIP, &rip) < 0) {
             fprintf(stderr, "Error while getting RIP");
-            return NULL;
+            return -1;
     }
 
-    return (void *)(rip - 1);
+    return rip;
 }
 
+/*
+** \return Return -1 on failure and %rax on success.
+**
+** \note An error is print on stderr in case of failure.
+*/
+static long get_sysno(struct dproc *proc)
+{
+    long rax = ptrace(PTRACE_PEEKUSER, proc->pid, sizeof(long)*ORIG_RAX);
+    if (rax == -1)
+        fprintf(stderr, "%d: Failed to get syscall number\n", proc->pid);
+
+    return rax;
+}
+
+/*
+** \brief get the address of the breakpoint's instruction hit by \p proc.
+** It is the syscall number for BP_SYSCALL and %rip - 1 for others.
+**
+** \return Return a pointer to the address on success and the macro BP_ERR
+** on failure.
+**
+** \note An error is print on stderr in case of failure.
+*/
+static void *get_stopped_addr(struct dproc *proc)
+{
+    if (!WIFSTOPPED(proc->status))
+        return BP_ERR;
+
+    if (WSTOPSIG(proc->status) == SIGTRAP)
+        return (void *)(get_rip(proc) - 1);
+    else if (WSTOPSIG(proc->status) == (SIGTRAP | 0x80))
+        return (void *)get_sysno(proc);
+
+    return BP_ERR;
+}
+
+/*
+** \brief Set rip to the breakpoint's address hit by \p proc and replace
+** the BP_OPCODE by the breakpoint's saved instruction. Update the breakpoint's
+** count and state.
+**
+** \return Return -1 on failure and 0 on success.
+**
+** \note An error is print on stderr in case of failure.
+*/
 static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
                        struct dproc *proc)
 {
@@ -56,6 +116,15 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
     return 0;
 }
 
+/*
+** \brief Set rip to the breakpoint's address hit by \p proc and replace
+** the BP_OPCODE by the breakpoint's saved instruction. Once it is done
+** the breakpoint is removed from the bp_table and destroyed.
+**
+** \return Return -1 on failure and 0 on success.
+**
+** \note An error is print on stderr in case of failure.
+*/
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc)
 {
@@ -79,14 +148,54 @@ err_reset_bp:
     return -1;
 }
 
+/**
+** \brief Print the return value of the syscall and set bp_out_sys to
+** null.
+**
+** \return Return -1 on failure and 0 on success.
+**
+** \note In case of failure bp_out_sys is still set to NULL and an error
+** is print on stderr.
+*/
+static int out_syscall(struct breakpoint *bp, struct dproc *proc)
+{
+    bp_out_sys = NULL;
+    long rax = ptrace(PTRACE_PEEKUSER, proc->pid, sizeof(long)*RAX);
+    if (rax == -1) {
+        fprintf(stderr, "%d: Failed to get syscall number\n", proc->pid);
+        return -1;
+    }
+
+    printf("Returned from syscall %p with value %zu\n", bp->addr, rax);
+    return 0;
+}
+
+/**
+** \brief If the hit breakpoint does not correspond to a return from a
+** syscall, update its count and save \p bp in bp_out_sys. Otherwise,
+** call out_syscall.
+**
+** \return Return 0 on success and -1 in case of failure.
+*/
+static int hit_syscall(struct debug_infos *dinfos, struct breakpoint *bp,
+                       struct dproc *proc)
+{
+    (void)dinfos;
+    if (bp_out_sys == bp)
+        return out_syscall(bp, proc);
+
+    printf("Hit breakpoint %u on syscall %zu\n", bp->id, (size_t)bp->addr);
+
+    bp->count += 1;
+    bp_out_sys = bp;
+
+    return 0;
+}
+
 int bp_hit(struct debug_infos *dinfos, struct dproc *proc)
 {
-    siginfo_t sig = proc->siginfo;
-    if (sig.si_signo != SIGTRAP) // || sig.si_code != TRAP_BRKPT)
-        return -1;
-
     void *bp_addr = get_stopped_addr(proc);
-    if (!bp_addr)
+    if (bp_addr == BP_ERR)
         return -1;
 
     struct breakpoint *bp = bp_htable_get(bp_addr, dinfos->bp_table);

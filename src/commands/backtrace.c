@@ -38,10 +38,8 @@ err_invalid_pid:
 
 int do_backtrace(struct debug_infos *dinfos, char *args[])
 {
-    if (!dinfos->melf.elf || !dinfos->dflt_pid) {
-        fprintf(stderr, "No running process\n");
+    if (check_params(args, 1, 1) == -1 || !is_running(dinfos))
         return -1;
-    }
 
     struct dproc *proc = get_dproc(dinfos, args);
     if (!proc)
