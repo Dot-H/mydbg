@@ -21,6 +21,7 @@ set(SRC
         src/commands/continue.c
         src/commands/examine.c
         src/commands/file.c
+        src/commands/finish.c
         src/commands/help.c
         src/commands/info_process.c
         src/commands/info_regs.c

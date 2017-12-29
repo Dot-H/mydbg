@@ -15,41 +15,15 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
                        struct dproc *proc);
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc);
-static int hit_syscall(struct debug_infos *dinfos, struct breakpoint *bp,
-                       struct dproc *proc);
 
 /* Handlers' index is given by the value of their type */
 int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
                      struct dproc *proc) = {
     hit_classic,
     hit_temporary,
-    hit_syscall
 };
 
 static struct breakpoint *bp_out_sys = NULL;
-
-/*
-** \return Return %rip on sucess and -1 on failure.
-**
-** \note An error is print on stderr in case of failure.
-*/
-static unw_word_t get_rip(struct dproc *proc)
-{
-
-    if (unw_init_remote(&proc->unw.c, proc->unw.as,
-                        proc->unw.ui) < 0) {
-        fprintf(stderr, "Error while initing remote\n");
-        return -1;
-    }
-
-    unw_word_t rip;
-    if (unw_get_reg(&proc->unw.c, UNW_X86_64_RIP, &rip) < 0) {
-            fprintf(stderr, "Error while getting RIP");
-            return -1;
-    }
-
-    return rip;
-}
 
 /*
 ** \return Return -1 on failure and %rax on success.
@@ -66,8 +40,8 @@ static long get_sysno(struct dproc *proc)
 }
 
 /*
-** \brief get the address of the breakpoint's instruction hit by \p proc.
-** It is the syscall number for BP_SYSCALL and %rip - 1 for others.
+** \brief get the address of the breakpoint's instruction hit by \p proc
+** which is %rip - 1.
 **
 ** \return Return a pointer to the address on success and the macro BP_ERR
 ** on failure.
@@ -76,15 +50,19 @@ static long get_sysno(struct dproc *proc)
 */
 static void *get_stopped_addr(struct dproc *proc)
 {
-    if (!WIFSTOPPED(proc->status))
+    if (unw_init_remote(&proc->unw.c, proc->unw.as,
+                        proc->unw.ui) < 0) {
+        fprintf(stderr, "Error while initing remote\n");
         return BP_ERR;
+    }
 
-    if (WSTOPSIG(proc->status) == SIGTRAP)
-        return (void *)(get_rip(proc) - 1);
-    else if (WSTOPSIG(proc->status) == (SIGTRAP | 0x80))
-        return (void *)get_sysno(proc);
+    unw_word_t rip;
+    if (unw_get_reg(&proc->unw.c, UNW_X86_64_RIP, &rip) < 0) {
+            fprintf(stderr, "Error while getting RIP");
+            return BP_ERR;
+    }
 
-    return BP_ERR;
+    return (void *)(rip - 1);
 }
 
 /*
@@ -105,7 +83,7 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
     if (unw_set_reg(&proc->unw.c, UNW_X86_64_RIP, (uintptr_t)bp->addr) < 0) {
         fprintf(stderr, "Could not set RIP to %p\n", bp->addr);
         return -1;
-    }       
+    }
 
     if (set_opcode(proc->pid, bp->sv_instr, bp->addr) == -1)
         return -1;
@@ -170,17 +148,16 @@ static int out_syscall(struct breakpoint *bp, struct dproc *proc)
     return 0;
 }
 
-/**
-** \brief If the hit breakpoint does not correspond to a return from a
-** syscall, update its count and save \p bp in bp_out_sys. Otherwise,
-** call out_syscall.
-**
-** \return Return 0 on success and -1 in case of failure.
-*/
-static int hit_syscall(struct debug_infos *dinfos, struct breakpoint *bp,
-                       struct dproc *proc)
+int bp_sys_hit(struct debug_infos *dinfos, struct dproc *proc)
 {
-    (void)dinfos;
+    long sysno = get_sysno(proc);
+    if (sysno == -1)
+        return -1;
+
+    struct breakpoint *bp = bp_htable_get((void *)sysno, dinfos->bp_table);
+    if (!bp)
+        return -1;
+
     if (bp_out_sys == bp)
         return out_syscall(bp, proc);
 

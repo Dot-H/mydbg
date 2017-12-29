@@ -97,6 +97,19 @@ int bp_destroy(struct breakpoint *bp);
 int bp_hit(struct debug_infos *dinfos, struct dproc *proc);
 
 /**
+** \brief Search for a breakpoint corresponding to the syscall value.
+** If the hit breakpoint does not correspond to a return from a
+** syscall, update its count and save \p bp in bp_out_sys. Otherwise,
+** call out_syscall.
+**
+** \return Return 0 on success and -1 if no breakpoint is put on the
+** called syscall or if an error occured.
+**
+** \note In cause of error, a message is print on stderr.
+*/
+int bp_sys_hit(struct debug_infos *dinfos, struct dproc *proc);
+
+/**
 ** \param dinfos Envirnment containing the breakpoint table.
 ** \param proc Process whose received the SIGTRAP
 ** \param bp breakpoint whose provocted the SIGTRAP
