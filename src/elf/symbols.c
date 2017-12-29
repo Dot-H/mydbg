@@ -18,8 +18,8 @@ void reset_melf(struct melf *melf)
     if (melf->elf && munmap(melf->elf, melf->size) == -1)
         warn("Cannot unmap %p", melf->elf);
 
-    if (melf->staticsym)
-        sym_htable_destroy(melf->staticsym);
+    if (melf->sym_table)
+        sym_htable_destroy(melf->sym_table);
 
     memset(melf, 0, sizeof(struct melf));
 }
@@ -95,15 +95,15 @@ static const Elf64_Sym *gnu_lookup(char *strtab, const Elf64_Sym *symtab,
     uint32_t nb_bits = sizeof(uint64_t) * 8;
 
     uint32_t namehash = gnu_hash(name);
-    uint64_t word = bloom[(namehash / nb_bits) % (hashtab->bloom_size)];
-    uint64_t mask = 0
-        | ((uint64_t)1 << (namehash % nb_bits))
-        | ((uint64_t)1 << ((namehash >> hashtab->bloom_shift) % nb_bits));
-    word |= mask;
+    uint32_t h2 = namehash >> hashtab->bloom_shift;
+    uint32_t N = ((namehash / nb_bits) % hashtab->bloom_size);
 
-    if ((word & mask) != mask) {
+    uint64_t bitmask = ((size_t)1 << (namehash % nb_bits))
+                       | ((size_t)1 << (h2 % nb_bits));
+
+    uint64_t word = bloom[N];
+    if ((word & bitmask) != bitmask)
         return NULL;
-    }
 
     uint32_t n = buckets[namehash % hashtab->nbuckets];
     if (n == 0)
@@ -111,7 +111,6 @@ static const Elf64_Sym *gnu_lookup(char *strtab, const Elf64_Sym *symtab,
 
     const Elf64_Sym *sym = symtab + n;
     const uint32_t *hashval = &chain[n - hashtab->symoffset];
-
     for (namehash &= ~1; 1; sym++) {
         const uint32_t hash = *hashval++;
         char* symname = strtab + sym->st_name;
@@ -168,6 +167,9 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
                 break;
             case DT_GNU_HASH:
                 *gnutable = add_oft(header, dyn->d_un.d_ptr);
+                break;
+            case DT_SYMENT:
+                printf("dtsyment: %ld\n", dyn->d_un.d_val);
                 break;
             default:
                 break;
@@ -228,10 +230,31 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
     return 0;
 }
 
+static void fill_sym_table(struct melf *elf, Elf64_Sym *symtab,
+                           size_t symtab_size)
+{
+    Elf64_Sym *tmp = elf->dynsymtab;
+    for (; !tmp->st_value; ++tmp) {
+        if (ELF64_ST_TYPE(tmp->st_info) != STT_FUNC)
+                continue;
+
+        sym_htable_insert(tmp, elf->dynstrtab, elf->sym_table);
+    }
+
+    for (size_t i = 0; i < symtab_size; ++i) {
+        if (!symtab[i].st_value || ELF64_ST_TYPE(symtab[i].st_info) != STT_FUNC)
+            continue;
+
+        char *name = symtab[i].st_name + elf->strtab;
+        if (!gnu_lookup(elf->dynstrtab, elf->dynsymtab, elf->gnutable, name))
+            sym_htable_insert(symtab + i, elf->strtab, elf->sym_table);
+    }
+}
+
 void get_symbols(struct melf *elf)
 {
     elf->strtab    = NULL; /* Has to be NULL if no symbols */
-    elf->staticsym = NULL; /* Same */
+    elf->sym_table = NULL; /* Same */
     elf->rela_plt  = NULL;
     if (get_dyn_infos(elf->elf, &elf->dynsymtab, &elf->dynstrtab,
                       &elf->gnutable) == -1) {
@@ -249,15 +272,8 @@ void get_symbols(struct melf *elf)
     }
     fprintf(stderr, KBLU"Static symbols found\n"KNRM);
 
-    elf->staticsym = sym_htable_creat();
-    for (size_t i = 0; i < symtab_size; ++i) {
-        if (ELF64_ST_TYPE(symtab[i].st_info) != STT_FUNC)
-            continue;
-
-        char *name = symtab[i].st_name + elf->strtab;
-        if (!gnu_lookup(elf->dynstrtab, elf->dynsymtab, elf->gnutable, name))
-            sym_htable_insert(symtab + i, elf->strtab, elf->staticsym);
-    }
+    elf->sym_table = sym_htable_creat();
+    fill_sym_table(elf, symtab, symtab_size);
 }
 
 const Elf64_Sym *find_symbol(struct melf elf, char *name)
@@ -269,8 +285,8 @@ const Elf64_Sym *find_symbol(struct melf elf, char *name)
 
     const Elf64_Sym *ret = gnu_lookup(elf.dynstrtab, elf.dynsymtab,
                                       elf.gnutable, name);
-    if (!ret && elf.staticsym)
-        ret = sym_htable_get(name, elf.staticsym);
+    if (!ret && elf.sym_table)
+        ret = sym_htable_get(name, elf.sym_table);
 
     return ret;
 }
@@ -282,9 +298,13 @@ uint16_t idx_from_oft(const void *ptr_base, const void *ptr_oft, size_t size) {
 
 const Elf64_Rela *get_rela(struct melf elf, const Elf64_Sym *sym)
 {
+    /*
+    ** Since all the relocatable symbols have been saved from the dynamic
+    ** symbol table, we are sure when getting here that the symbol is present
+    ** in the .rela.plt section and the idx can be calculated from the offset
+    */
     uint16_t sym_idx = idx_from_oft(elf.dynsymtab, sym, sizeof(Elf64_Sym));
 
-    sym_idx = 3; /* FIXME Test */
     Elf64_Rela *tmp = elf.rela_plt;
     while (ELF64_R_SYM(tmp->r_info) != sym_idx) // Must be in it
         ++tmp;

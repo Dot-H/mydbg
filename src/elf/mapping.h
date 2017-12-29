@@ -21,7 +21,7 @@ struct melf {
     size_t size;
 
     char *strtab; /* Used to get the symbols from symtab */
-    struct htable *staticsym; /* not exported symbols from symtab */
+    struct htable *sym_table; /* Function symbols not present in gnu_hash */
 
     Elf64_Rela *rela_plt;
     Elf64_Sym *dynsymtab;
