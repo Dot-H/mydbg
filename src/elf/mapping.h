@@ -23,6 +23,7 @@ struct melf {
     char *strtab; /* Used to get the symbols from symtab */
     struct htable *staticsym; /* not exported symbols from symtab */
 
+    Elf64_Rela *rela_plt;
     Elf64_Sym *dynsymtab;
     char *dynstrtab;
     struct gnu_table *gnutable;
@@ -41,7 +42,11 @@ void *map_elf(const char *file, size_t *size);
 
 void reset_melf(struct melf *melf);
 
+Elf64_Phdr *get_dynamic_phdr(Elf64_Ehdr *header);
+
 void get_symbols(struct melf *elf);
+
+const Elf64_Rela *get_rela(struct melf elf, const Elf64_Sym *sym);
 
 const Elf64_Sym *find_symbol(struct melf elf, char *name);
 

@@ -41,7 +41,7 @@ static size_t sym_hash (void *namearg)
   unsigned long h = 5381;
   unsigned char ch;
 
-  while ((ch = *name++) != '\0')
+  while ((ch = *name++) != '\0' && ch != '@')
     h = (h << 5) + h + ch;
   return h & 0xffffffff;
 }
@@ -50,13 +50,15 @@ static int sym_cmp(void *keya, void *keyb)
 {
     char *stra = keya;
     char *strb = keyb;
-    return !strcmp(stra, strb);
+    while (*stra && *strb && *stra++ == *strb++)
+        continue;
+
+    return (!*stra && !*strb) || *stra == '@' || *strb == '@';
 }
 
-static inline void *add_oft(void *addr, uint64_t oft)
+static inline void *add_oft(const void *addr, const uint64_t oft)
 {
-    char *ret = addr;
-    return ret + oft;
+    return (char *)addr + oft;
 }
 
 static void get_sh_infos(const Elf64_Ehdr *header, const Elf64_Shdr *shdr,
@@ -84,8 +86,8 @@ static void get_ph_infos(Elf64_Ehdr *header, uint16_t *phnum)
 
 }
 
-static const Elf64_Sym *gnu_lookup(const char *strtab, const Elf64_Sym *symtab,
-                      const struct gnu_table *hashtab, const char *name) {
+static const Elf64_Sym *gnu_lookup(char *strtab, const Elf64_Sym *symtab,
+                      const struct gnu_table *hashtab, char *name) {
 
     const uint64_t *bloom = &hashtab->bloom;
     const uint32_t* buckets = (void *)(bloom + hashtab->bloom_size);
@@ -112,9 +114,9 @@ static const Elf64_Sym *gnu_lookup(const char *strtab, const Elf64_Sym *symtab,
 
     for (namehash &= ~1; 1; sym++) {
         const uint32_t hash = *hashval++;
-        const char* symname = strtab + sym->st_name;
+        char* symname = strtab + sym->st_name;
 
-        if ((namehash == (hash & ~1)) && !strcmp(name, symname))
+        if ((namehash == (hash & ~1)) && sym_cmp(name, symname))
             return sym;
 
         if (hash & 1)
@@ -124,11 +126,10 @@ static const Elf64_Sym *gnu_lookup(const char *strtab, const Elf64_Sym *symtab,
     return NULL;
 }
 
-static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
-                         char **dynstrtab, struct gnu_table **gnutable)
+Elf64_Phdr *get_dynamic_phdr(Elf64_Ehdr *header)
 {
     if (!header->e_phoff || !header->e_phnum)
-        return -1;
+        return NULL;
 
 
     uint16_t phnum;
@@ -141,12 +142,22 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
             break;
 
     if (i == phnum || phdr->p_type != PT_DYNAMIC)
-        return -1;
+        return NULL;
 
+    return phdr;
+}
+
+static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
+                         char **dynstrtab, struct gnu_table **gnutable)
+{
     *dynsymtab = NULL;
     *dynstrtab = NULL;
     *gnutable  = NULL;
-    Elf64_Dyn *dyn = add_oft(header, phdr->p_offset);
+    Elf64_Phdr *dyn_phdr = get_dynamic_phdr(header);
+    if (!dyn_phdr)
+        return -1;
+    Elf64_Dyn *dyn = add_oft(header, dyn_phdr->p_offset);
+
     for (; dyn->d_tag != DT_NULL; ++dyn) {
         switch (dyn->d_tag) {
             case DT_STRTAB:
@@ -170,7 +181,8 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
 }
 
 static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
-                            size_t *symtab_size, char **strtab)
+                            size_t *symtab_size, char **strtab,
+                            Elf64_Rela **rela_plt)
 {
     if (!header->e_shoff || !header->e_shentsize ||
         header->e_shstrndx == SHN_UNDEF)
@@ -188,6 +200,7 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
 
     *strtab = NULL;
     *symtab = NULL;
+    *rela_plt = NULL;
     for(uint16_t i = 0; i < header->e_shnum; ++i){
         const char *name = shstrtab + shdr[i].sh_name;
         switch (shdr[i].sh_type) {
@@ -201,12 +214,15 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
                     *symtab_size = shdr[i].sh_size / shdr[i].sh_entsize;
                 }
                 break;
+            case SHT_RELA:
+                if (!strcmp(name, ".rela.plt"))
+                    *rela_plt = add_oft(header, shdr[i].sh_offset);
             default:
                 break;
         }
     }
 
-    if (!strtab || !symtab)
+    if (!strtab || !symtab || !rela_plt)
         return -1;
 
     return 0;
@@ -214,8 +230,9 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
 
 void get_symbols(struct melf *elf)
 {
-    elf-> strtab    = NULL; /* Has to be NULL if no symbols */
+    elf->strtab    = NULL; /* Has to be NULL if no symbols */
     elf->staticsym = NULL; /* Same */
+    elf->rela_plt  = NULL;
     if (get_dyn_infos(elf->elf, &elf->dynsymtab, &elf->dynstrtab,
                       &elf->gnutable) == -1) {
         fprintf(stderr, KRED"No exported symbols found\n"KNRM);
@@ -225,7 +242,8 @@ void get_symbols(struct melf *elf)
 
     size_t symtab_size = 0;
     Elf64_Sym *symtab  = NULL;
-    if (get_static_infos(elf->elf, &symtab, &symtab_size, &elf->strtab) == -1) {
+    if (get_static_infos(elf->elf, &symtab, &symtab_size, &elf->strtab,
+                         &elf->rela_plt) == -1) {
         fprintf(stderr, KRED"No static symbols found\n"KNRM);
         return;
     }
@@ -236,7 +254,7 @@ void get_symbols(struct melf *elf)
         if (ELF64_ST_TYPE(symtab[i].st_info) != STT_FUNC)
             continue;
 
-        const char *name = symtab[i].st_name + elf->strtab;
+        char *name = symtab[i].st_name + elf->strtab;
         if (!gnu_lookup(elf->dynstrtab, elf->dynsymtab, elf->gnutable, name))
             sym_htable_insert(symtab + i, elf->strtab, elf->staticsym);
     }
@@ -255,7 +273,24 @@ const Elf64_Sym *find_symbol(struct melf elf, char *name)
         ret = sym_htable_get(name, elf.staticsym);
 
     return ret;
- }
+}
+
+static inline
+uint16_t idx_from_oft(const void *ptr_base, const void *ptr_oft, size_t size) {
+    return (((char *)ptr_oft - (char *)ptr_base) / size);
+}
+
+const Elf64_Rela *get_rela(struct melf elf, const Elf64_Sym *sym)
+{
+    uint16_t sym_idx = idx_from_oft(elf.dynsymtab, sym, sizeof(Elf64_Sym));
+
+    sym_idx = 3; /* FIXME Test */
+    Elf64_Rela *tmp = elf.rela_plt;
+    while (ELF64_R_SYM(tmp->r_info) != sym_idx) // Must be in it
+        ++tmp;
+
+    return tmp;
+}
 
 struct htable *sym_htable_creat(void)
 {
