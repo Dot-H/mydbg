@@ -2,6 +2,9 @@
 # define MAPPING_H
 
 # include <elf.h>
+# include <stddef.h>
+
+# include "debug.h"
 
 # define SYM_HTABLE_SIZE 10
 # define KNRM  "\x1B[0m"
@@ -16,12 +19,14 @@ struct gnu_table {
     uint64_t bloom;
 };
 
+
 struct melf {
     void  *elf;
     size_t size;
 
     char *strtab; /* Used to get the symbols from symtab */
     struct htable *sym_table; /* Function symbols not present in gnu_hash */
+    struct htable *dw_table;
 
     Elf64_Rela *rela_plt;
     Elf64_Sym *dynsymtab;

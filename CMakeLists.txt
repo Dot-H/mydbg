@@ -34,6 +34,7 @@ set(SRC
         src/inputs/inputs.c
         src/maps/maps.c
         src/my_dbg.c
+        src/elf/debug.c
         src/elf/mapping.c
         src/elf/symbols.c
         src/print/print_func.c

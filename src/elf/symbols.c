@@ -181,7 +181,7 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
 
 static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
                             size_t *symtab_size, char **strtab,
-                            Elf64_Rela **rela_plt)
+                            Elf64_Rela **rela_plt, struct dwarf *dwarf)
 {
     if (!header->e_shoff || !header->e_shentsize ||
         header->e_shstrndx == SHN_UNDEF)
@@ -216,6 +216,13 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
             case SHT_RELA:
                 if (!strcmp(name, ".rela.plt"))
                     *rela_plt = add_oft(header, shdr[i].sh_offset);
+                break;
+            case SHT_PROGBITS:
+                if (!strcmp(name, ".debug_info"))
+                    dwarf->debug_info = add_oft(header, shdr[i].sh_offset);
+                else if (!strcmp(name, ".debug_line"))
+                    dwarf->debug_line = shdr + i;
+                break;
             default:
                 break;
         }
@@ -250,9 +257,9 @@ static void fill_sym_table(struct melf *elf, Elf64_Sym *symtab,
 
 void get_symbols(struct melf *elf)
 {
-    elf->strtab    = NULL; /* Has to be NULL if no symbols */
-    elf->sym_table = NULL; /* Same */
-    elf->rela_plt  = NULL;
+    elf->strtab           = NULL; /* Has to be NULL if no symbols */
+    elf->sym_table        = NULL; /* Same */
+    elf->rela_plt         = NULL;
     if (get_dyn_infos(elf->elf, &elf->dynsymtab, &elf->dynstrtab,
                       &elf->gnutable) == -1) {
         fprintf(stderr, KRED"No exported symbols found\n"KNRM);
@@ -262,8 +269,11 @@ void get_symbols(struct melf *elf)
 
     size_t symtab_size = 0;
     Elf64_Sym *symtab  = NULL;
+    struct dwarf dw;
+    dw.debug_line = NULL;
+    dw.debug_info = NULL;
     if (get_static_infos(elf->elf, &symtab, &symtab_size, &elf->strtab,
-                         &elf->rela_plt) == -1) {
+                         &elf->rela_plt, &dw) == -1) {
         fprintf(stderr, KRED"No static symbols found\n"KNRM);
         return;
     }
@@ -271,6 +281,12 @@ void get_symbols(struct melf *elf)
 
     elf->sym_table = sym_htable_creat();
     fill_sym_table(elf, symtab, symtab_size);
+
+    elf->dw_table = parse_debug_info(elf->elf, &dw);
+    if (elf->dw_table)
+        fprintf(stderr, KBLU"Debug symbols found\n"KNRM);
+    else
+        fprintf(stderr, KRED"No debug symbols found\n"KNRM);
 }
 
 const Elf64_Sym *find_symbol(struct melf elf, char *name)
