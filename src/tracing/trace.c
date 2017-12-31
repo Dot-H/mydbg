@@ -56,7 +56,7 @@ void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
         if (WSTOPSIG(proc->status) == (SIGTRAP & 0x80)) {
             if (bp_sys_hit(dinfos, proc) == -1)
                 do_continue(dinfos, NULL);
-        } else { 
+        } else {
             bp_hit(dinfos, proc);
         }
     }

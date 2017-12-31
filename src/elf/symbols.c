@@ -21,6 +21,9 @@ void reset_melf(struct melf *melf)
     if (melf->sym_table)
         sym_htable_destroy(melf->sym_table);
 
+    if (melf->dw_table)
+        dw_htable_destroy(melf->dw_table);
+
     memset(melf, 0, sizeof(struct melf));
 }
 

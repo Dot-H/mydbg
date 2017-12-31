@@ -190,7 +190,7 @@ int bp_htable_remove_by_id(long id, struct htable *htable)
         struct wl_list *head = &htable->array[i].link;
         struct data *tmp;
         wl_list_for_each(tmp, head, link) {
-            struct breakpoint *bp = (struct breakpoint *)tmp->value;
+            struct breakpoint *bp = tmp->value;
             if (bp->id == id && !bp_destroy(tmp->value)) {
                 wl_list_remove(&tmp->link);
                 free(tmp);
