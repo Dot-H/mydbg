@@ -77,6 +77,9 @@ Commands
     backtrace
             [PID]   Print the call stack from the current addr
 
+    list    [N]     List N lines starting from the current one. N is by default
+                    set to 10 and must be an integer.
+
 Return values
 -------------
 

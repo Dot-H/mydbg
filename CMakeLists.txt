@@ -26,6 +26,7 @@ set(SRC
         src/commands/info_process.c
         src/commands/info_regs.c
         src/commands/info_header.c
+        src/commands/list.c
         src/commands/quit.c
         src/commands/run.c
         src/commands/next_instr.c

@@ -3,6 +3,9 @@
 portability:
     [ ] 32bits elf support
 
+debug symbols:
+    [ ] use .debug_abbrev section to file dw_table
+
 commands:
     [ ] passing argument to run
     [ ] reset all pids in bp_table when running again
@@ -10,6 +13,7 @@ commands:
     [ ] examine $d
     [ ] examine $s: escape non printable arguments
     [ ] argument N to singlestep and next_instr
+    [ ] negative argument to list
 
 breakpoints:
     [ ] completion on breakf

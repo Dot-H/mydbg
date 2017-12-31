@@ -8,6 +8,7 @@
 # include "hash_table.h"
 
 # define DW_HTABLE_SIZE 5
+# define PROL_COMP 10 // length + version + prologue_len ?
 
 struct dw_hdrline {
     uint32_t length;
@@ -28,10 +29,24 @@ struct dwarf {
 
 struct dw_file {
     char *filename;
+    int dir_idx; /* Index in directory table. 0 If any */
+    char *mfile; /* Mapped file. Null if not mapped */
+    size_t msize; /* size of the file */
+
     const struct dw_hdrline *hdr;
     uintptr_t start;
     uintptr_t end;
 };
+
+/**
+** \return a newly allocated and filled with buggy values struct dw_file
+*/
+struct dw_file *dw_file_creat(void);
+
+/**
+** \brief Destroy \p dw and close its file descriptor if open
+*/
+void dw_file_destroy(struct dw_file *dw);
 
 /**
 ** \brief Create an htable filled with every file's line number statement
@@ -39,10 +54,32 @@ struct dw_file {
 **
 ** \return Return a new allocated and filled struct htable if there is
 ** debug informations and NULL otherwise.
+**
+** \note Should change with the use of .debug_abbrev
 */
 struct htable *parse_debug_info(const void *elf, const struct dwarf *dwarf);
 
-ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr);
+/**
+** \param dw Struct used to store the result found informations.
+**
+** \brief Search the line inside the source file corresponding to \p addr.
+** If found, set \p dw with the struct dw_file corresponding to the line.
+**
+** \return Return the line number if found and -1 otherwise.
+*/
+ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
+                           struct dw_file **dw);
+
+/**
+** \brief map the \p dw's filename attribute, using the dir_idx attribute
+** if different from 0. The \p dw's mfile attribute is set with the value of
+** the mapping on success.
+**
+** \return Return the mapped file on success and NULL otherwise.
+**
+** \note In case of error, a message is print on stderr.
+*/
+char *dw_map(struct dw_file *dw);
 
 /****************************************/
 /*      Wrappers to struct htable       */
