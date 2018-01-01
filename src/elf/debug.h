@@ -71,6 +71,15 @@ ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
                            struct dw_file **dw);
 
 /**
+** \brief Search the next line inside the source file corresponding to
+** \p addr.
+**
+** \return Return the address of the found line on success and -1 if
+** \p addr does not correspond to any file.
+*/
+intptr_t get_next_line_addr(struct htable *dw_table, uintptr_t addr);
+
+/**
 ** \brief map the \p dw's filename attribute, using the dir_idx attribute
 ** if different from 0. The \p dw's mfile attribute is set with the value of
 ** the mapping on success.

@@ -32,7 +32,9 @@ int a(int val)
 void dump_rdebug(struct r_debug *rdbg)
 {
     struct link_map *tmp = rdbg->r_map;
-    printf("r_debug: %p\n", (void *)rdbg); printf("r_brk: %p\n", (void *)rdbg->r_brk); printf("%s\n", tmp->l_name);
+    printf("r_debug: %p\n", (void *)rdbg);
+    printf("r_brk: %p\n", (void *)rdbg->r_brk);
+    printf("%s\n", tmp->l_name);
     tmp = tmp->l_next;
     for (; tmp && tmp != rdbg->r_map; tmp = tmp->l_next)
         printf("%s\n", tmp->l_name);

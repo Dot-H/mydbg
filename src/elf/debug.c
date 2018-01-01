@@ -187,6 +187,23 @@ static void hit_spec(const struct dw_hdrline *hdr, uintptr_t *addr,
 }
 
 /**
+** \brief Interprete and consume the current opcode and its potential
+** arguments. Actualize addr and line in function.
+*/
+static void actualize_opc(struct dw_file *dw_file, const uint8_t **opcodes,
+                          size_t *addr, size_t *line)
+{
+    uint8_t opcode = **opcodes;
+    *opcodes += 1;
+    if (!opcode)
+        *opcodes += hit_extd(dw_file, addr, *opcodes);
+    else if (opcode < 13)
+        *opcodes += hit_std(dw_file->hdr, addr, line, *opcodes, opcode);
+    else
+        hit_spec(dw_file->hdr, addr, line, opcode);
+}
+
+/**
 ** \return Return a filled struct dw_file corresponding to the
 ** informations inside \p line_stmts.
 */
@@ -194,19 +211,13 @@ static struct dw_file *parse_line_stmts(const struct dw_hdrline *hdr,
                                         const uint8_t *line_stmts)
 {
     struct dw_file *dw_file = dw_file_creat();
+    dw_file->hdr      = hdr;
 
     const uint8_t *opcodes = line_stmts;
     uintptr_t addr = 0;
     size_t line    = 1;
-    while (!is_end_statement(opcodes)) {
-        uint8_t opcode = *opcodes++;
-        if (!opcode)
-            opcodes += hit_extd(dw_file, &addr, opcodes);
-        else if (opcode < 13)
-            opcodes += hit_std(hdr, &addr, &line, opcodes, opcode);
-        else
-            hit_spec(hdr, &addr, &line, opcode);
-    }
+    while (!is_end_statement(opcodes))
+        actualize_opc(dw_file, &opcodes, &addr, &line);
 
     dw_file->end = addr;
     return dw_file;
@@ -230,7 +241,6 @@ struct htable *parse_debug_info(const void *elf, const struct dwarf *dwarf)
 
         dw_file->filename = nametab;
         dw_file->dir_idx  = get_dir_idx(nametab);
-        dw_file->hdr      = hdr;
         dw_htable_insert(dw_file, dw_table);
 
         len += hdr->length + 4; /* 4: Delimiter NULL bytes */
@@ -251,20 +261,43 @@ ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
     const uint8_t *opcodes = line_stmts;
 
     uintptr_t cur_addr = 0;
-    size_t prv_line    = 0;
-    size_t line        = 0;
-    while (cur_addr < addr  || line == 0) {
+    size_t prv_line    = 1;
+    size_t line        = 1;
+    printf("addr: %zu\n", addr);
+    while (cur_addr < addr || prv_line == line) {
         prv_line = line;
-        uint8_t opcode = *opcodes++;
-        if (!opcode)
-            opcodes += hit_extd(*dw, &cur_addr, opcodes);
-        else if (opcode < 13)
-            opcodes += hit_std((*dw)->hdr, &cur_addr, &line, opcodes, opcode);
-        else
-            hit_spec((*dw)->hdr, &cur_addr, &line, opcode);
+        actualize_opc(*dw, &opcodes, &cur_addr, &line);
     }
 
-    return cur_addr == addr ? line : prv_line;
+    return line;
+}
+
+intptr_t get_next_line_addr(struct htable *dw_table, uintptr_t addr) {
+    struct dw_file *dw = dw_htable_search_by_addr(addr, dw_table);
+    if (!dw)
+        return -1;
+
+    char *nametab = get_file_name_table(dw->hdr);
+    const uint8_t *line_stmts = get_line_statements(nametab);
+    const uint8_t *opcodes = line_stmts;
+
+    uintptr_t cur_addr = 0;
+    size_t prv_line    = 1;
+    size_t line        = 1;
+    while (cur_addr < addr || prv_line == line) {
+        prv_line = line;
+        actualize_opc(dw, &opcodes, &cur_addr, &line);
+    }
+
+    line = (cur_addr == addr) ? line : prv_line;
+    prv_line = line;
+    while (prv_line == line && !is_end_statement(opcodes))
+        actualize_opc(dw, &opcodes, &cur_addr, &line);
+
+    if (prv_line == line) /* Hit end statement */
+        return get_next_line_addr(dw_table, cur_addr);
+
+    return cur_addr;
 }
 
 /**
@@ -379,7 +412,7 @@ struct dw_file *dw_htable_search_by_addr(uintptr_t addr,
         struct data *tmp;
         wl_list_for_each(tmp, head, link) {
             struct dw_file *dw = tmp->value;
-            if (dw->start <= addr && addr <= dw->end)
+            if (dw->start <= addr && addr < dw->end)
                 return dw;
 
             ++j;

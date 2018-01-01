@@ -213,6 +213,9 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
         return -1;
     }
 
+    if (bp->type == BP_SILENT) // No id, no message
+        return ret;
+
     bp->id = bp_id;
     ++bp_id;
 

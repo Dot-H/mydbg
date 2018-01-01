@@ -16,7 +16,8 @@
 enum bp_type {
     BP_CLASSIC   = 0,
     BP_TEMPORARY = 1,
-    BP_SYSCALL   = 2,
+    BP_SILENT    = 2, /* Used as for intern operations (finish, line_step..) */
+    BP_SYSCALL   = 3,
 };
 
 enum bp_state {

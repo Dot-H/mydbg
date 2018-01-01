@@ -33,11 +33,12 @@ int do_finish(struct debug_infos *dinfos, char *args[])
         return -1;
     }
 
-    struct breakpoint *bp = bp_creat(BP_TEMPORARY);
-    if (!bp_set(dinfos, bp, (void *)ip, dinfos->dflt_pid))
-        return do_continue(dinfos, NULL);
+    struct breakpoint *bp = bp_creat(BP_SILENT);
+    bp_set(dinfos, bp, (void *)ip, dinfos->dflt_pid);
 
-    return -1;
+    // If bp_set fails it is because a breakpoint is already set at the finished
+    // address. We do not need tu put a silent breakpoint.
+    return do_continue(dinfos, NULL);
 }
 
 shell_cmd(finish, do_finish, "Continue the execution until hitting the return\

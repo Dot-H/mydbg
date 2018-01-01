@@ -21,6 +21,7 @@ int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
                      struct dproc *proc) = {
     hit_classic,
     hit_temporary,
+    hit_temporary // BP_SILENT handling
 };
 
 static struct breakpoint *bp_out_sys = NULL;
@@ -106,7 +107,9 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc)
 {
-    printf("Hit temporary breakpoint %u at %p\n", bp->id, bp->addr);
+    if (bp->type != BP_SILENT)
+        printf("Hit temporary breakpoint %u at %p\n", bp->id, bp->addr);
+
     if (set_opcode(proc->pid, bp->sv_instr, bp->addr) == -1) {
         fprintf(stderr, "Could not restore instruction at %p\n", bp->addr);
         goto err_reset_bp;

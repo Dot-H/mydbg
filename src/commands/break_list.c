@@ -29,6 +29,8 @@ const char *type_name(enum bp_type type)
             return "temporary breakpoint";
         case BP_SYSCALL:
             return "syscall breakpoint";
+        case BP_SILENT:
+            return "";
     }
 
     return "???";
@@ -54,6 +56,9 @@ int print_bps(struct debug_infos *dinfos, char *args[])
 
         wl_list_for_each(tmp, head, link){
             struct breakpoint *bp = tmp->value;
+            if (bp->type == BP_SILENT)
+                continue;
+
             const char *state = state_name(bp->state);
             const char *name  = type_name(bp->type);
             const char *place = bp->type == BP_SYSCALL ? "on syscall" : "at";

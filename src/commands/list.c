@@ -9,17 +9,17 @@
 #include "debug.h"
 
 /**
-** \param noline line number searched
+** \param lineno line number searched
 ** \param start starting index
 **
-** \brief Search the index of \p noline into \p file starting at \p start
+** \brief Search the index of \p lineno into \p file starting at \p start
 **
-** \return Return the index of \p noline
+** \return Return the index of \p lineno
 */
-static size_t get_idx(const char *file, size_t noline, size_t start)
+static size_t get_idx(const char *file, size_t lineno, size_t start)
 {
     size_t cnt = 1;
-    for (; file[start] != EOF && cnt < noline; ++start)
+    for (; file[start] != EOF && cnt < lineno; ++start)
         if (file[start] == '\n')
             ++cnt;
 
@@ -28,10 +28,10 @@ static size_t get_idx(const char *file, size_t noline, size_t start)
 
 /**
 ** \param dw file containing the source code to print
-** \param line noline line number to print from
+** \param line lineno line number to print from
 ** \param nb number of line to print
 **
-** \brief print \p nb lines from \p dw starting at \p noline. If the \p dw's
+** \brief print \p nb lines from \p dw starting at \p lineno. If the \p dw's
 ** mfile attribute is unmap, map it.
 **
 ** \return Return -1 in case of error and 0 otherwise.
@@ -41,7 +41,7 @@ static size_t get_idx(const char *file, size_t noline, size_t start)
 ** call the list on the same file.
 ** In case of error while mapping an error is print on stderr.
 */
-static int print_lines(struct dw_file *dw, size_t noline, size_t nb)
+static int print_lines(struct dw_file *dw, size_t lineno, size_t nb)
 {
     static struct dw_file *last_dw = NULL;
     static size_t last_line = 0;
@@ -50,24 +50,24 @@ static int print_lines(struct dw_file *dw, size_t noline, size_t nb)
         if (!dw_map(dw))
             return -1;
 
-    if (last_dw != dw || noline < last_line) {
+    if (last_dw != dw || lineno < last_line) {
         last_dw   = dw;
         last_line = 0;
         last_idx  = 0;
     }
 
-    size_t idx = get_idx(dw->mfile, noline - last_line, last_idx);
+    size_t idx = get_idx(dw->mfile, lineno - last_line, last_idx);
     if (dw->mfile[idx] == EOF) {
-        fprintf(stderr, "Invalid line number: %zu", noline);
+        fprintf(stderr, "Invalid line number: %zu", lineno);
         return -1;
     }
 
     last_idx  = idx;
-    last_line = noline; 
+    last_line = lineno - 1;
 
     for (size_t i = 0; i < nb && idx < dw->msize; ++i) {
         size_t end = get_idx(dw->mfile, 2, idx);
-        printf(KBLU"%zu: "KNRM, noline + i); 
+        printf(KBLU"%zu: "KNRM, lineno + i); 
         idx += printf("%.*s", (int)(end - idx), dw->mfile + idx); 
     }
 
@@ -106,7 +106,7 @@ int do_list(struct debug_infos *dinfos, char *args[])
                                       &dw);
     if (line == -1) {
         fprintf(stderr, "Could not find the line corresponding to addr 0x%lx\n",
-                addr);
+                addr - proc_addr);
         return -1;
     }
 
