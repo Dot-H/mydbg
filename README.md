@@ -80,6 +80,12 @@ Commands
     list    [N]     List N lines starting from the current one. N is by default
                     set to 10 and must be an integer.
 
+    step_line       Continue the execution of the tracee until the next line
+                    or subcall.
+
+    next_line       Continue the execution of the tracee until the next line
+                    without stopping on the subcalls.
+
 Return values
 -------------
 

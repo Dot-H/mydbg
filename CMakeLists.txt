@@ -31,6 +31,7 @@ set(SRC
         src/commands/run.c
         src/commands/next_instr.c
         src/commands/singlestep.c
+        src/commands/step_line.c
         src/commands/next_line.c
         src/dbgprocess/dproc.c
         src/inputs/inputs.c

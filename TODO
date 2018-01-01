@@ -6,6 +6,10 @@ portability:
 debug symbols:
     [ ] use .debug_abbrev section to file dw_table
 
+interaction:
+    [ ] Ctrl-C stops current instruction if in interactive mode
+        and send sigstop to tracee if not
+
 commands:
     [ ] passing argument to run
     [ ] reset all pids in bp_table when running again

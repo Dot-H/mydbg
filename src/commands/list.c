@@ -88,7 +88,7 @@ int do_list(struct debug_infos *dinfos, char *args[])
     ssize_t line = get_line_from_addr(dinfos->melf.dw_table, addr - proc_addr,
                                       &dw);
     if (line == -1) {
-        fprintf(stderr, "Could not find the line corresponding to addr 0x%lx\n",
+        fprintf(stderr, "Cannot print the line corresponding to addr 0x%lx\n",
                 addr - proc_addr);
         return -1;
     }
