@@ -35,35 +35,18 @@ static size_t get_idx(const char *file, size_t lineno, size_t start)
 ** mfile attribute is unmap, map it.
 **
 ** \return Return -1 in case of error and 0 otherwise.
-**
-** \note The function uses three static value to save the previous line and 
-** its associated index. It is usefull to save time if the user do multiple
-** call the list on the same file.
-** In case of error while mapping an error is print on stderr.
 */
 static int print_lines(struct dw_file *dw, size_t lineno, size_t nb)
 {
-    static struct dw_file *last_dw = NULL;
-    static size_t last_line = 0;
-    static size_t last_idx  = 0;
     if (!dw->mfile)
         if (!dw_map(dw))
             return -1;
 
-    if (last_dw != dw || lineno < last_line) {
-        last_dw   = dw;
-        last_line = 0;
-        last_idx  = 0;
-    }
-
-    size_t idx = get_idx(dw->mfile, lineno - last_line, last_idx);
+    size_t idx = get_idx(dw->mfile, lineno, 0);
     if (dw->mfile[idx] == EOF) {
         fprintf(stderr, "Invalid line number: %zu", lineno);
         return -1;
     }
-
-    last_idx  = idx;
-    last_line = lineno - 1;
 
     for (size_t i = 0; i < nb && idx < dw->msize; ++i) {
         size_t end = get_idx(dw->mfile, 2, idx);

@@ -59,4 +59,6 @@ int do_singlestep(struct debug_infos *dinfos, char *args[]);
 
 int do_continue(struct debug_infos *dinfos, char *args[]);
 
+int do_next_instr(struct debug_infos *dinfos, char *args[]);
+
 #endif /* !COMMANDS_H */

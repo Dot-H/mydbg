@@ -58,7 +58,7 @@ static void *check_call(char *str, uintptr_t addr)
 static int jump_call(struct debug_infos *dinfos, struct dproc *proc,
                      void *nxt_addr)
 {
-    struct breakpoint *bp = bp_creat(BP_TEMPORARY);
+    struct breakpoint *bp = bp_creat(BP_SILENT);
     bp->a_pid              = proc->pid;
 
     bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, nxt_addr);
@@ -81,7 +81,7 @@ err_free_bp:
     return -1;
 }
 
-int do_ni(struct debug_infos *dinfos, char *args[])
+int do_next_instr(struct debug_infos *dinfos, char *args[])
 {
     if (!is_running(dinfos))
         return -1;
@@ -124,5 +124,5 @@ err_free_dumped:
     return -1;
 }
 
-shell_cmd(next_instr, do_ni, "Step one instruction, but proceed through \
+shell_cmd(next_instr, do_next_instr, "Step one instruction, but proceed through\
  subroutine calls");

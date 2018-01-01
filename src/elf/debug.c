@@ -269,33 +269,26 @@ ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
         actualize_opc(*dw, &opcodes, &cur_addr, &line);
     }
 
-    return line;
+    return (cur_addr == addr) ? line : prv_line;
 }
 
-intptr_t get_next_line_addr(struct htable *dw_table, uintptr_t addr) {
-    struct dw_file *dw = dw_htable_search_by_addr(addr, dw_table);
-    if (!dw)
+intptr_t get_next_line_addr(struct htable *dw_table, uintptr_t addr,
+                            struct dw_file **dw) {
+    *dw = dw_htable_search_by_addr(addr, dw_table);
+    if (!*dw)
         return -1;
 
-    char *nametab = get_file_name_table(dw->hdr);
+    char *nametab = get_file_name_table((*dw)->hdr);
     const uint8_t *line_stmts = get_line_statements(nametab);
     const uint8_t *opcodes = line_stmts;
 
     uintptr_t cur_addr = 0;
     size_t prv_line    = 1;
     size_t line        = 1;
-    while (cur_addr < addr || prv_line == line) {
+    while (cur_addr <= addr || prv_line == line) {
         prv_line = line;
-        actualize_opc(dw, &opcodes, &cur_addr, &line);
+        actualize_opc(*dw, &opcodes, &cur_addr, &line);
     }
-
-    line = (cur_addr == addr) ? line : prv_line;
-    prv_line = line;
-    while (prv_line == line && !is_end_statement(opcodes))
-        actualize_opc(dw, &opcodes, &cur_addr, &line);
-
-    if (prv_line == line) /* Hit end statement */
-        return get_next_line_addr(dw_table, cur_addr);
 
     return cur_addr;
 }
