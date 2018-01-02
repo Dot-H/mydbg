@@ -71,4 +71,4 @@ int load_file(struct debug_infos *dinfos, char *args[])
 }
 
 shell_cmd(file, load_file, "Load file given in argument. Replace the current \
-debugged file if any.");
+debugged file if any");

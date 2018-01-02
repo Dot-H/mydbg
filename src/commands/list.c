@@ -50,8 +50,8 @@ static int print_lines(struct dw_file *dw, size_t lineno, size_t nb)
 
     for (size_t i = 0; i < nb && idx < dw->msize; ++i) {
         size_t end = get_idx(dw->mfile, 2, idx);
-        printf(KBLU"%zu: "KNRM, lineno + i); 
-        idx += printf("%.*s", (int)(end - idx), dw->mfile + idx); 
+        printf(KBLU"%zu: "KNRM, lineno + i);
+        idx += printf("%.*s", (int)(end - idx), dw->mfile + idx);
     }
 
     return 0;
@@ -59,7 +59,7 @@ static int print_lines(struct dw_file *dw, size_t lineno, size_t nb)
 
 int do_list(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_running(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
     ssize_t nb = 10;
@@ -97,4 +97,4 @@ int do_list(struct debug_infos *dinfos, char *args[])
 }
 
 shell_cmd(list, do_list, "List N lines starting from the current one. N is by\
- default 10.");
+ default 10");

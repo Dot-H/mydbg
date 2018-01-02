@@ -60,6 +60,24 @@ void dw_file_destroy(struct dw_file *dw);
 struct htable *parse_debug_info(const void *elf, const struct dwarf *dwarf);
 
 /**
+** \param dw_table Hash table in wich \p filename is supposed to be
+** \param dw Struct in which lineno is searched. Can be null
+** \param filename File referred by \p lineno. Ignored if \p dw is not null
+** \param lineno Researched line
+**
+** \brief Get the struct dw_file referring to \p filename and search
+** the address of \p lineno. An error occurs if \p filename or \lineno
+** is not found.
+**
+** \return Return the address of \p lineno on success and -1 otherwise.
+**
+** \note \p dw is used when the calling function wants to search in a specific
+** struct dw_file. If \p dw AND \p filename are null the function will segv.
+*/
+intptr_t get_line_addr(struct htable *dw_table, struct dw_file *dw,
+                       char *filename, size_t lineno);
+
+/**
 ** \param dw Struct used to store the result found informations.
 **
 ** \brief Search the line inside the source file corresponding to \p addr.

@@ -27,8 +27,8 @@ int do_continue(struct debug_infos *dinfos, char *args[])
     if (bp_cont(dinfos, proc) == -1)
         return -1;
 
-    int ret = -1;
-    if ((ret = ptrace(dinfos->ptrace_req, proc->pid, 0, 0) == -1))
+    int ret = 0;
+    if ((ret = ptrace(dinfos->ptrace_req, proc->pid, 0, 0)) == -1)
         warn("Could not resume the execution of %d", proc->pid);
     else
         wait_tracee(dinfos, proc);

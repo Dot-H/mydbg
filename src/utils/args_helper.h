@@ -49,11 +49,20 @@ long arg_to_long(char *arg, int base);
 int check_params(char *args[], long min, long max);
 
 /**
-** \return Returns 1 if the the process is running and 0 otherwise.
+** \return Returns 1 if the process is running and 0 otherwise.
 **
 ** \note If the process is not running, a message is print on stderr.
 */
 int is_running(struct debug_infos *dinfos);
+
+/**
+** \return Returns 1 if the loaded elf has debugging informations and 0
+** otherwise.
+**
+** \note If the the process has no debugging informations, an error is
+** print on stderr.
+*/
+int has_debug_infos(struct debug_infos *dinfos);
 
 /**
 ** \param idx Index of the pid

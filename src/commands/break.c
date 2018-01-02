@@ -1,7 +1,5 @@
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/wait.h>
 
 #include "commands.h"
 #include "my_dbg.h"

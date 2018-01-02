@@ -249,6 +249,30 @@ struct htable *parse_debug_info(const void *elf, const struct dwarf *dwarf)
     return dw_table;
 }
 
+intptr_t get_line_addr(struct htable *dw_table, struct dw_file *dw,
+                       char *filename, size_t lineno)
+{
+    if (!dw) {
+        dw = dw_htable_get(filename, dw_table);
+        if (!dw)
+            return -1;
+    }
+
+    char *nametab = get_file_name_table(dw->hdr);
+    const uint8_t *line_stmts = get_line_statements(nametab);
+    const uint8_t *opcodes = line_stmts;
+
+    uintptr_t addr = 0;
+    size_t line    = 1;
+    while (line < lineno && !is_end_statement(opcodes))
+        actualize_opc(dw, &opcodes, &addr, &line);
+
+    if (line != lineno)
+        return -1;
+
+    return addr;
+}
+
 ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
                            struct dw_file **dw)
 {
@@ -263,8 +287,8 @@ ssize_t get_line_from_addr(struct htable *dw_table, uintptr_t addr,
     uintptr_t cur_addr = 0;
     size_t prv_line    = 1;
     size_t line        = 1;
-    printf("addr: %zu\n", addr);
-    while (cur_addr < addr || prv_line == line) {
+    while ((cur_addr < addr || prv_line == line)
+            && !is_end_statement(opcodes)) {
         prv_line = line;
         actualize_opc(*dw, &opcodes, &cur_addr, &line);
     }

@@ -56,6 +56,17 @@ int is_running(struct debug_infos *dinfos)
     return 1;
 }
 
+int has_debug_infos(struct debug_infos *dinfos)
+{
+    if (!dinfos->melf.dw_table)
+    {
+        fprintf(stderr, "No debugging infos found\n");
+        return 0;
+    }
+
+    return 1;
+}
+
 struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
                        int idx)
 {

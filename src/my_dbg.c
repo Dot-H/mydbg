@@ -20,26 +20,29 @@ struct debug_infos *init_debug_infos(void)
     if (!dinfos)
         err(1, "Cannot allocate struct debug_infos");
 
-    dinfos->dflt_pid    = 0;
-    dinfos->melf.elf    = NULL;
-    dinfos->melf.size   = 0;
-    dinfos->args        = NULL;
-    dinfos->dproc_table = dproc_htable_creat();
-    dinfos->bp_table    = bp_htable_creat();
-    dinfos->maps_table  = map_htable_creat();
+    dinfos->dflt_pid      = 0;
+    dinfos->melf.elf      = NULL;
+    dinfos->melf.size     = 0;
+    dinfos->melf.dw_table = NULL;
+    dinfos->args          = NULL;
+    dinfos->dproc_table   = dproc_htable_creat();
+    dinfos->bp_table      = bp_htable_creat();
+    dinfos->maps_table    = map_htable_creat();
 
     return dinfos;
 }
 
 void empty_debug_infos(struct debug_infos *dinfos)
 {
+
     dproc_htable_reset(dinfos->dproc_table);
     bp_htable_reset(dinfos->bp_table);
     destroy_args(dinfos->args);
     map_htable_reset(dinfos->maps_table);
 
-    dinfos->args = NULL;
     reset_melf(&dinfos->melf);
+    dinfos->args     = NULL;
+    dinfos->dflt_pid = 0;
 }
 
 void destroy_debug_infos(struct debug_infos *dinfos)

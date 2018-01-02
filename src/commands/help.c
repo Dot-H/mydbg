@@ -11,7 +11,7 @@ static int unique_doc(const char *str)
     for (size_t i = 0; i < len; ++i) {
         struct command *cmd = __start_cmds + i;
         if (!strcmp(cmd->name, str)) {
-            printf("%s: %s\n", cmd->name, cmd->doc);
+            printf(KBLU"%s"KNRM": %s\n", cmd->name, cmd->doc);
             return 0;
         }
     }

@@ -28,7 +28,7 @@ static inline int has_jumped(struct dw_file *dw, uintptr_t addr,
 
 int do_step_line(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_running(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
     int argsc = check_params(args, 1, 1);
@@ -74,4 +74,4 @@ int do_step_line(struct debug_infos *dinfos, char *args[])
 }
 
 shell_cmd(step_line, do_step_line, "Execute the code until the next source \
-code line. Enter the function if any.");
+code line. Follow the subcalls");

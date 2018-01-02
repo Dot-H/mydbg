@@ -93,11 +93,12 @@ int bp_cont(struct debug_infos *dinfos, struct dproc *proc)
     }
 
     struct breakpoint *bp = bp_htable_get((void *)regs.rip, dinfos->bp_table);
+    int ret = 0;
     if (bp)
-        return bp_reset(dinfos, bp, proc);
+        ret = bp_reset(dinfos, bp, proc);
 
     dinfos->ptrace_req = bp_nsys ? PTRACE_SYSCALL : PTRACE_CONT;
-    return 0;
+    return ret;
 }
 
 /**
