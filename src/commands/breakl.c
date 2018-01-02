@@ -11,12 +11,9 @@
 
 static struct dw_file *get_dw_file(struct debug_infos *dinfos, long proc_addr)
 {
-    long addr = ptrace(PTRACE_PEEKUSER, dinfos->dflt_pid, sizeof(long)*RIP);
-    if (addr == -1) {
-        fprintf(stderr, "Could not get the current address\n");
+    long addr = get_addr(dinfos->dflt_pid, NULL, 0, 1);
+    if (addr == -1)
         return NULL;
-    }
-
 
     addr -= proc_addr; /* Debugs infos reffered to elf offsets */
 

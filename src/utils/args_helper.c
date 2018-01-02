@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <err.h>
-#include "errno.h"
+#include <errno.h>
 #include <stdio.h>
+#include <sys/ptrace.h>
+#include <sys/reg.h>
 
 #include "args_helper.h"
 
@@ -82,4 +84,19 @@ struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
         fprintf(stderr, "Could not find process %d\n", pid);
 
     return proc;
+}
+
+long get_addr(pid_t pid, char *args[], int argsc, int idx)
+{
+    long addr = -1;
+    if (argsc <= idx) {
+        addr = ptrace(PTRACE_PEEKUSER, pid, sizeof(long) * RIP);
+        if (addr == -1)
+            warn("Could not get the current address");
+
+    } else {
+        addr = arg_to_long(args[idx], 16);
+    }
+
+    return addr;
 }

@@ -63,17 +63,17 @@ int do_list(struct debug_infos *dinfos, char *args[])
         return -1;
 
     ssize_t nb = 10;
-    int argsc = check_params(args, 1, 2);
+    int argsc = check_params(args, 1, 3);
     if (argsc == -1)
         return -1;
-    else if (argsc == 2) {
+    else if (argsc >= 2) {
         nb = arg_to_long(args[1], 10);
         if (nb < 0)
             return -1;
     }
 
-    long addr = ptrace(PTRACE_PEEKUSER, dinfos->dflt_pid, sizeof(long)*RIP);
-    if (!addr)
+    long addr = get_addr(dinfos->dflt_pid, args, argsc, 2);
+    if (addr == -1)
         return -1;
 
     struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);
@@ -96,5 +96,5 @@ int do_list(struct debug_infos *dinfos, char *args[])
     return print_lines(dw, line, nb);
 }
 
-shell_cmd(list, do_list, "List N lines starting from the current one. N is by\
- default 10");
+shell_cmd(list, do_list, "List N lines starting from the current one or the \
+address given as second argument. N is by default 10");

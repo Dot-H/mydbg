@@ -83,14 +83,23 @@ Commands
     backtrace
             [PID]   Print the call stack from the current addr
 
-    list    [N]     List N lines starting from the current one. N is by default
-                    set to 10 and must be an integer.
+    list    [N] [ADDR]
+                    List N lines starting from the current one or the addr
+                    given in argument. N is by default set to 10 and must
+                    be an unsigned integer. Note that to give an address,
+                    N must be given too.
 
     step_line       Continue the execution of the tracee until the next line
                     or subcall.
 
     next_line       Continue the execution of the tracee until the next line
                     without stopping on the subcalls.
+
+    disas   [N] [ADDR] [PID]
+                    Disas N instructions starting from the current addr or
+                    the one given in argument. N is by default set to 10 and
+                    must be an unsigned integer. Note that to give an address,
+                    N must be given too.
 
 Return values
 -------------
@@ -111,4 +120,4 @@ Notes
 AUTHORS
 -------
 
-    Alexandre 'DotH' Bernard
+    Alexandre 'DotH' Bernard (bernar_1)

@@ -77,4 +77,17 @@ int has_debug_infos(struct debug_infos *dinfos);
 */
 struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
                        int idx);
+
+/**
+** \param idx Index of the address
+**
+** \brief Get the address from either \p args or RIP. The address is taken
+** from \args if \p idx is smaller than \p argsc.
+**
+** \return Returns the address on success and -1 otherwise.
+**
+** \note A message is print on stderr if an error occured.
+*/
+long get_addr(pid_t pid, char *args[], int argsc, int idx);
+
 #endif /* !ARGS_HELPER_H */

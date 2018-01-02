@@ -20,6 +20,7 @@ set(SRC
         src/commands/breaks.c
         src/commands/commands.c
         src/commands/continue.c
+        src/commands/disassemble.c
         src/commands/examine.c
         src/commands/file.c
         src/commands/finish.c
