@@ -50,6 +50,12 @@ Commands
     breakf  [FUNC]  Put a breakpoint on the address of the function given in
                     argument.
 
+    breakl  LINE [FILE]
+                    Put a breakpoint at the line given in argument in the
+                    current file or the one given in argument. If no file is
+                    given in argument my_dbg tries to get the current one
+                    from the current address.
+
     break_list      List all the breakpoints
 
     break_del

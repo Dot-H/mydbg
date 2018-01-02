@@ -52,11 +52,11 @@ void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
         warn("Failed to recover siginfo from %d", proc->pid);
 
 
-    if (proc->siginfo.si_signo == SIGTRAP && dinfos->dflt_pid) {
-        if (WSTOPSIG(proc->status) == (SIGTRAP & 0x80)) {
+    if (dinfos->dflt_pid) {
+        if (WSTOPSIG(proc->status) == (SIGTRAP | 0x80)) {
             if (bp_sys_hit(dinfos, proc) == -1)
                 do_continue(dinfos, NULL);
-        } else {
+        } else if (WSTOPSIG(proc->status) == SIGTRAP) {
             bp_hit(dinfos, proc);
         }
     }
