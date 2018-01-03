@@ -16,6 +16,24 @@ static size_t bp_id = 1;
 ** to handle the ptrace request set in the struct debug_infos.
 */
 static size_t bp_nsys = 0;
+static int bp_hwtab[BP_NHW] = { 0 }; // 1 if register is set
+
+#define DR_OFFSET(x) (((struct user *)0)->u_debugreg + x)
+#define dr7_set_hwlabel(dr7, label, idx, val)   \
+    switch (idx) {                              \
+        case 0:                                 \
+            dr7.dr0_##label = val;              \
+            break;                              \
+        case 1:                                 \
+            dr7.dr1_##label = val;              \
+            break;                              \
+        case 2:                                 \
+            dr7.dr2_##label = val;              \
+            break;                              \
+        case 3:                                 \
+            dr7.dr3_##label = val;              \
+            break;                              \
+    }                                           \
 
 struct breakpoint *bp_creat(enum bp_type type)
 {
@@ -30,16 +48,59 @@ struct breakpoint *bp_creat(enum bp_type type)
     return new;
 }
 
+
+int bp_hw_poke(struct breakpoint *bp, enum bp_hw_cond cond, enum bp_hw_len len)
+{
+    int i = 0;
+    while (i < BP_NHW && bp_hwtab[i])
+        ++i;
+
+    if (i == BP_NHW)
+        return -BP_NHW;
+
+    struct dr7 dr7 = { 0 };
+    dr7_set_hwlabel(dr7, local, i, 1)
+    dr7_set_hwlabel(dr7, cond, i, cond)
+    dr7_set_hwlabel(dr7, len, i, len)
+    dr7.local_exact  = 1;
+    dr7.global_exact = 1;
+    dr7.reserved_1   = 1;
+
+    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(0),
+               bp->addr) == -1) {
+        warn ("Could not put breakpoint's address in %%dr%d", i);
+        return -1;
+    }
+
+    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(7), dr7) == -1) {
+        warn ("Could not setup %%dr7 for %%dr%d", i);
+        return -1;
+    }
+
+    bp->addr = (void *)((uintptr_t)bp->addr - 1);
+    return 0;
+}
+
 int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
            void *bp_addr, pid_t pid)
 {
     bp->a_pid = pid;
-    bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
-    if (bp->sv_instr == -1)
-        goto err_destroy_bp;
-
     bp->addr  = bp_addr;
     bp->state = BP_ENABLED;
+
+    if (bp->type == BP_HARDWARE) {
+        int ret;
+        if ((ret = bp_hw_poke(bp, BP_HW_INSTR, BP_HW_LEN_1BY)) < 0) {
+            if (ret == -BP_NHW)
+                fprintf(stderr, "Too many hardware breakpoint already put\n");
+            goto err_destroy_bp;
+        }
+    } else {
+
+        bp->sv_instr = set_opcode(bp->a_pid, BP_OPCODE, bp_addr);
+        if (bp->sv_instr == -1)
+            goto err_destroy_bp;
+    }
 
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)
         goto err_destroy_bp;
@@ -94,7 +155,7 @@ int bp_cont(struct debug_infos *dinfos, struct dproc *proc)
 
     struct breakpoint *bp = bp_htable_get((void *)regs.rip, dinfos->bp_table);
     int ret = 0;
-    if (bp)
+    if (bp && bp->type != BP_HARDWARE)
         ret = bp_reset(dinfos, bp, proc);
 
     dinfos->ptrace_req = bp_nsys ? PTRACE_SYSCALL : PTRACE_CONT;
@@ -152,6 +213,8 @@ void bp_htable_reset(struct htable *htable)
     htable->nmemb = 0;
     bp_id         = 1;
     bp_nsys       = 0;
+    for (int i = 0; i < BP_NHW; ++i)
+        bp_hwtab[i] = 0;
 }
 
 void bp_htable_destroy(struct htable *htable)

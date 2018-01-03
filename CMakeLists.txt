@@ -12,9 +12,10 @@ set(SRC
         src/breakpoint/bp_hit.c
         src/breakpoint/breakpoint.c
         src/commands/backtrace.c
-        src/commands/break.c
         src/commands/break_del.c
         src/commands/break_list.c
+        src/commands/break.c
+        src/commands/breakhw.c
         src/commands/breakf.c
         src/commands/breakl.c
         src/commands/breaks.c

@@ -15,13 +15,16 @@ static int hit_classic(struct debug_infos *dinfos, struct breakpoint *bp,
                        struct dproc *proc);
 static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc);
+static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
+                        struct dproc *proc);
 
 /* Handlers' index is given by the value of their type */
 int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
                      struct dproc *proc) = {
     hit_classic,
     hit_temporary,
-    hit_temporary // BP_SILENT handling
+    hit_temporary, // BP_SILENT handling
+    hit_hardware
 };
 
 static struct breakpoint *bp_out_sys = NULL;
@@ -127,6 +130,16 @@ static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
 err_reset_bp:
     set_opcode(proc->pid, BP_OPCODE, bp->addr);
     return -1;
+}
+
+static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
+                        struct dproc *proc)
+{
+    (void)dinfos;
+    (void)proc;
+    printf("Hit hardware breakpoint %u at 0x%lx\n", bp->id,
+                                                (uintptr_t)bp->addr + 1);
+    return 0;
 }
 
 /**

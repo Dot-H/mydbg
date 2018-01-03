@@ -27,10 +27,12 @@ const char *type_name(enum bp_type type)
             return "breakpoint";
         case BP_TEMPORARY:
             return "temporary breakpoint";
-        case BP_SYSCALL:
-            return "syscall breakpoint";
         case BP_SILENT:
             return "";
+        case BP_HARDWARE:
+            return "hardware breakpoint";
+        case BP_SYSCALL:
+            return "syscall breakpoint";
     }
 
     return "???";
@@ -59,11 +61,15 @@ int print_bps(struct debug_infos *dinfos, char *args[])
             if (bp->type == BP_SILENT)
                 continue;
 
+            uintptr_t bp_addr = (uintptr_t)bp->addr;
+            if (bp->type == BP_HARDWARE)
+                ++bp_addr;
+
             const char *state = state_name(bp->state);
             const char *name  = type_name(bp->type);
             const char *place = bp->type == BP_SYSCALL ? "on syscall" : "at";
-            printf("\t%s %u [%s] %s %p hit %zu times\n",
-                    name, bp->id, state, place, bp->addr, bp->count);
+            printf("\t%s %u [%s] %s 0x%lx hit %zu times\n",
+                    name, bp->id, state, place, bp_addr, bp->count);
             ++j;
         }
     }
