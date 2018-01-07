@@ -9,7 +9,11 @@ Description
 Usage
 -----
 
-    ./my_dbg [FILE]
+    sh$ mkdir build
+    sh$ cd build
+    sh$ cmake ..
+    sh$ make
+    sh$ ./my_dbg [FILE]
 
     In order to use the debugger, simply run the my_dbg binary. If
     an argument is provided, this must be a 64bits elf. The argument
@@ -25,6 +29,13 @@ Usage
     __Example:__
 
         ./my_dbg super_program
+        mydbg> run
+        mydbg> breakf main
+        mydbg> continue
+        mydbg> list
+        mydbg> breakl 10 source2.c
+        mydbg> break
+        ...
 
 
 Commands
