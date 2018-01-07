@@ -100,3 +100,18 @@ long get_addr(pid_t pid, char *args[], int argsc, int idx)
 
     return addr;
 }
+
+int get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx)
+{
+    pid_t pid = dinfos->dflt_pid;
+    if (argsc <= idx)
+        return pid;
+
+    pid = arg_to_long(args[idx], 10);
+    if (pid < -1) {
+        fprintf(stderr, "Pid cannot be negative: %d\n", pid);
+        return -1;
+    }
+
+    return pid;
+}

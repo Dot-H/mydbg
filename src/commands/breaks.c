@@ -39,7 +39,7 @@ int do_breaks(struct debug_infos *dinfos, char *args[])
     return 0;
 
 err_destroy_bp:
-    bp_destroy(bp);
+    bp_destroy(dinfos, bp);
     return -1;
 }
 

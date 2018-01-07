@@ -1,8 +1,9 @@
-#include <err.h>
 #include <elf.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ptrace.h>
+#include <sys/wait.h>
 
 #include "commands.h"
 #include "my_dbg.h"
@@ -16,35 +17,14 @@ static inline void *add_oft(void *addr, uint64_t oft)
     return ret + oft;
 }
 
-/**
-** \type Type of the breakpoint to put. Filled by the funciton.
-**
-** \return If the linker has already done the relocation, the value pointed
-** to by the got is returned. Otherwise, it's the address which will be
-** relocated which is returned. If an error occured, -1 is returned.
-**
-** \note An error is print on stderr if ptrace fails
-*/
-static long got_addr_value(struct map *procmap, long proc_map_addr,
-                           const Elf64_Rela *rela, pid_t pid,
-                           enum bp_type *type)
+static long got_addr_value(long proc_map_addr, const Elf64_Rela *rela,
+                           pid_t pid)
 {
     void *got_addr = (void *)(proc_map_addr + rela->r_offset);
     long got_value = ptrace(PTRACE_PEEKTEXT, pid, got_addr, NULL);
     if (got_value == -1)
-        warn("Could not peek value at %p\n", got_addr);
+        fprintf(stderr, "Could not peek value at %p\n", got_addr);
 
-    printf("0x%lx\n", got_value);
-    long proc_map_limit = arg_to_long(procmap->line + procmap->ofts[1], 16);
-    if (proc_map_limit == -1)
-        return -1;
-
-    if (got_value > proc_map_addr && got_value < proc_map_limit) {
-        *type = BP_RELOCATION;
-        return (long)got_addr;
-    }
-
-    *type = BP_CLASSIC;
     return got_value;
 }
 
@@ -64,32 +44,27 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
     }
 
     struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);
-    if (!procmap) {
-        fprintf(stderr, "Could not find the mapping of %s\n", dinfos->args[0]);
+    if (!procmap)
         return -1;
-    }
 
     long proc_map_addr = arg_to_long(procmap->line, 16);
     if (proc_map_addr == -1)
         return -1;
 
     uintptr_t bp_addr = proc_map_addr + symbol->st_value;
-    enum bp_type type = BP_CLASSIC;
     if (symbol->st_value == 0)
 
     {
         const Elf64_Rela *rela = get_rela(dinfos->melf, symbol);
-        long tst = got_addr_value(procmap, proc_map_addr, rela,
-                                  dinfos->dflt_pid, &type);
+        long tst = got_addr_value(proc_map_addr, rela, dinfos->dflt_pid);
         if (tst == -1)
             return -1;
 
         bp_addr = tst;
     }
 
-    struct breakpoint *bp = bp_creat(type);
+    struct breakpoint *bp = bp_creat(BP_CLASSIC);
     return bp_set(dinfos, bp, (void *)bp_addr, dinfos->dflt_pid);
 }
 
-shell_cmd(breakf, do_breakf, "Put a breakpoint on the function given in \
-argument");
+shell_cmd(breakf, do_breakf, "Put a breakpoint on the function given in argument");

@@ -12,7 +12,8 @@
 # include "hash_table.h"
 # include "my_dbg.h"
 
-# define DPROC_HTABLE_SIZE 2
+# define DPROC_HTABLE_SIZE 1
+# define BP_TABLEN 4
 
 struct unwind {
     struct UPT_info *ui;
@@ -21,12 +22,17 @@ struct unwind {
     unw_addr_space_t as;
 };
 
+/**
+** bp_hwtab holds 0 if the corresponding %drN is unset and the address inside
+** the register otherwise
+*/
 struct dproc {
-   pid_t pid;
-   int status;
-   int is_attached;
-   siginfo_t siginfo; /* Last signal received by \p pid */
-   struct unwind unw;
+    pid_t pid;
+    uintptr_t bp_hwtab[BP_TABLEN];
+    int status;
+    int is_attached;
+    siginfo_t siginfo; /* Last signal received by \p pid */
+    struct unwind unw;
 };
 
 /**

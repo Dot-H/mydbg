@@ -31,13 +31,28 @@
             break;                              \
     }                                           \
 
+#define dr_get_hwlabel(dr, label, idx, val)     \
+    switch (idx) {                              \
+        case 0:                                 \
+            val = (dr)->dr0_##label;            \
+            break;                              \
+        case 1:                                 \
+            val = (dr)->dr1_##label;            \
+            break;                              \
+        case 2:                                 \
+            val = (dr)->dr2_##label;            \
+            break;                              \
+        case 3:                                 \
+            val = (dr)->dr3_##label;            \
+            break;                              \
+    }                                           \
+
 /* bp_type's value gives the index in the bp_handlers (bp_hit.c) */
 enum bp_type {
     BP_CLASSIC    = 0,
     BP_TEMPORARY  = 1,
     BP_SILENT     = 2, /* Used as for intern operations (finish, line_step..) */
     BP_HARDWARE   = 3,
-    BP_RELOCATION = 4, /* Used for intern break on shared library got address */
     BP_SYSCALL,
 };
 
@@ -50,6 +65,11 @@ enum bp_state {
 /*
 ** The addr attribute of a BP_SYSCALL is its syscall number and the
 ** sv_instr attribute is ignored.
+**
+** The BP_HARDWARE has special values:
+**      id represents its dr offset (0, 1, 2, 3)
+**      addr is decremented by one to act like an execution when hit
+**      sv_instr stores the current value of a watchpoint (w / rw)
 */
 struct breakpoint {
     enum bp_type type;
@@ -65,7 +85,7 @@ struct breakpoint {
 enum bp_hw_cond {
     BP_HW_INSTR        = 0,
     BP_HW_WRONLY       = 1,
-    BP_HW_RDWR         = 2,
+    BP_HW_RDWR         = 2, // Not used
     BP_HW_RDWR_NOFETCH = 3
 };
 
@@ -100,6 +120,20 @@ struct dr7 {
     enum bp_hw_len  dr3_len:  2; // 30 - 31
 };
 
+struct dr6 {
+    unsigned dr0_detected:   1; // 0
+    unsigned dr1_detected:   1; // 1
+    unsigned dr2_detected:   1; // 2
+    unsigned dr3_detected:   1; // 3
+    unsigned long reserved0: 8; // 4 - 11]
+    unsigned zero_reserved:  1; // 12
+    unsigned access_dtcd:    1; // 13
+    unsigned single_step:    1; // 14
+    unsigned task_swaitch:   1; // 15
+    unsigned long reserved1: 8; // 16 - 23]
+    unsigned long reserved2: 8; // 24 - 31]
+};
+
 /**
 ** \brief Allocate a new struct breakpoint filled with \p pid and \p bp
 **
@@ -123,7 +157,8 @@ struct breakpoint *bp_creat(enum bp_type);
 **
 ** \note An error message is print on stderr if a ptrace call failed.
 */
-int bp_hw_poke(struct breakpoint *bp, enum bp_hw_cond cond, enum bp_hw_len);
+int bp_hw_poke(struct debug_infos *dinfos, struct breakpoint *bp,
+               enum bp_hw_cond cond, enum bp_hw_len len);
 
 /*
 ** \brief Fill \p bp with \p bp_addr, \p pid and BP_ENABLED.
@@ -144,7 +179,7 @@ int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
 ** \brief Free all the allocated memory inside \p htable and reset
 **  all its attributes.
 */
-void bp_htable_reset(struct htable *htable);
+void bp_htable_reset(struct debug_infos *dinfos, struct htable *htable);
 
 /**
 ** \brief Reset the opcode at the address of \p bp before
@@ -157,9 +192,17 @@ void bp_htable_reset(struct htable *htable);
 ** \note In case of error, a message is print on stderr and
 ** \p bp has not been destroyed.
 */
-int bp_destroy(struct breakpoint *bp);
+int bp_destroy(struct debug_infos *dinfos, struct breakpoint *bp);
 
-int bp_hw_unset(int dr_offset, pid_t pid);
+/**
+** \brief set the dr_local attribute of %dr7 at offset \p dr_offset to 0
+** in the process pointed by \p pid.
+**
+** \return Return 0 on success and -1 on failure.
+**
+** \note An error message is print on stderr if something went wrong
+*/
+int bp_hw_unset(struct debug_infos *dinfos, int dr_offset, pid_t pid);
 
 /**
 ** \param dinfos Envirnment containing the breakpoint table.
@@ -232,13 +275,16 @@ struct htable *bp_htable_creat(void);
 ** \brief Free all the allocated memory inside \p htable and \p htable
 ** itself.
 */
-void bp_htable_destroy(struct htable *htable);
+void bp_htable_destroy(struct debug_infos *dinfos, struct htable *htable);
 
 struct breakpoint *bp_htable_get(void *addr, struct htable *htable);
 
-void bp_htable_remove(struct breakpoint *bp, struct htable *htable);
+void bp_htable_remove(struct debug_infos *dinfos, struct breakpoint *bp,
+                      struct htable *htable);
 
 /**
+** \param is_hw 1 if the id corresponds to an hardware breakpoint and 0 if not
+**
 ** \brief Search through the htable a breakpoint with an id equals to
 ** \p id. The breakpoint, if found, is destroyed and removed from
 ** \p htable.
@@ -246,7 +292,8 @@ void bp_htable_remove(struct breakpoint *bp, struct htable *htable);
 ** \return Return -1 if \p id does not correspond to an existing breakpoint
 ** and 0 if the corresponding breakpoint has been found and removed.
 */
-int bp_htable_remove_by_id(long id, struct htable *htable);
+int bp_htable_remove_by_id(struct debug_infos *dinfos, long id, int is_hw,
+                           struct htable *htable);
 
 int bp_htable_insert(struct breakpoint *bp, struct htable *htable);
 

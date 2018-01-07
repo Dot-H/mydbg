@@ -35,10 +35,10 @@ struct debug_infos *init_debug_infos(void)
 void empty_debug_infos(struct debug_infos *dinfos)
 {
 
-    dproc_htable_reset(dinfos->dproc_table);
-    bp_htable_reset(dinfos->bp_table);
+    bp_htable_reset(dinfos, dinfos->bp_table);
     destroy_args(dinfos->args);
     map_htable_reset(dinfos->maps_table);
+    dproc_htable_reset(dinfos->dproc_table);
 
     reset_melf(&dinfos->melf);
     dinfos->args     = NULL;
@@ -51,9 +51,9 @@ void destroy_debug_infos(struct debug_infos *dinfos)
         warn("Cannot unmap %p", dinfos->melf.elf);
 
     empty_debug_infos(dinfos);
-    dproc_htable_destroy(dinfos->dproc_table);
-    bp_htable_destroy(dinfos->bp_table);
+    bp_htable_destroy(dinfos, dinfos->bp_table);
     map_htable_destroy(dinfos->maps_table);
+    dproc_htable_destroy(dinfos->dproc_table);
     free(dinfos);
 }
 

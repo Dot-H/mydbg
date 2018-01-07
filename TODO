@@ -20,6 +20,9 @@ commands:
 breakpoints:
     [ ] Add needed symbols from shared library on load
     [ ] completion on breakf
+    [ ] Break on syscall before plt relocation
+        [ ] Search missing symbols offset in shared library and wait
+            break r_debug to hit to put the breakpoint ourself
 
 global:
     [ ] check for running process before reset binary

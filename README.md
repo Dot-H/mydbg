@@ -20,6 +20,7 @@ Usage
 
         ./my_dbg super_program
 
+
 Commands
 --------
 
@@ -29,16 +30,22 @@ Commands
 
     quit            Quit mydbg.
 
-    run     [FILE]  Run the currently loaded binary if no argument given.
-                    Otherwise, the argument is loaded and run.
+    run     [...]  Run the currently loaded binary if no argument given.
+                    Otherwise, the currennt binary is run with the given
+                    arguments.
+
+    file    FILE [...]
+                    Load binary given as first argument and store
+                    the rest of the arguments in order to run the binary
+                    with it later.
+
+    attach  PID     Attach to the process pointed by pid
 
     info_process    Print all the running process.
 
     info_regs       Print the registers of the current process
 
     info_header     Print the elf header of the current loaded file
-
-    file    FILE    Load binary given in argument.
 
     break   [ADDR]  Put a breakpoint on the address in argument if any and
                     on the current address otherwise.
@@ -47,8 +54,12 @@ Commands
                     any and on the current address otherwise. A temporary is
                     hit only one time before being trash.
 
-    breakf  [FUNC]  Put a breakpoint on the address of the function given in
+    breakf  FUNC  Put a breakpoint on the address of the function given in
                     argument.
+
+    breaks  SYSNO   Put a breakpoint at the entry of the syscall number given
+                    in argument. The debugger will also stop the process when
+                    returning from the syscall
 
     breakl  LINE [FILE]
                     Put a breakpoint at the line given in argument in the
@@ -56,11 +67,24 @@ Commands
                     given in argument my_dbg tries to get the current one
                     from the current address.
 
+    watchpoint
+            [ADDR] [COND] [LEN] [PID]
+                    Put a watchpoint at the address given in argumnent or at
+                    the current address if no argument. COND represents the
+                    exception condition of the watchpoint. LEN represents the
+                    number of watched bytes. PID represents the process.
+                    Possible values of COND are 'w' (write) 'rw' (read | right)
+                    and the default value is 'w'.
+                    Possible values of LEN are '1' (1 byte) '2' (2 byte) '4'
+                    (4 bytes) and '8' (8 bytes).
+
     break_list      List all the breakpoints
 
     break_del
-            [ID]    Delete the breakpoint corresponding to the id given in
-                    argument.
+            [[dr]ID]
+                    Delete the breakpoint corresponding to the id given in
+                    argument. If the breakpoint is an hardware breakpoint,
+                    the id must be preceded by 'dr'
 
     continue
             [PID]   Continue the execution of the pid given in argument.
@@ -114,7 +138,7 @@ Notes
     Lists are from "https://github.com/wayland-project/wayland".
     Copyrights in wayland-util.h and wayland-util.c.
 
-    A history file named .mydbg_history is written in $HOME. The name can
+    A history file named .mydbg_history is written at $HOME. The name can
     be modified in my_dbg.h
 
 AUTHORS

@@ -12,12 +12,11 @@
 
 static size_t bp_id = 1;
 
-/*
+/**
 ** Garbage counter for syscall breakpoints. Permits the bp wrappers
 ** to handle the ptrace request set in the struct debug_infos.
 */
 static size_t bp_nsys = 0;
-static int bp_hwtab[BP_NHW] = { 0 }; // 1 if register is set
 
 struct breakpoint *bp_creat(enum bp_type type)
 {
@@ -33,36 +32,51 @@ struct breakpoint *bp_creat(enum bp_type type)
 }
 
 
-int bp_hw_poke(struct breakpoint *bp, enum bp_hw_cond cond, enum bp_hw_len len)
+int bp_hw_poke(struct debug_infos *dinfos, struct breakpoint *bp,
+               enum bp_hw_cond cond, enum bp_hw_len len)
 {
+    struct dproc *proc = dproc_htable_get(bp->a_pid, dinfos->dproc_table);
+    if (!proc) {
+        fprintf(stderr, "Could not find process %d\n", bp->a_pid);
+        return -1;
+    }
+
     int i = 0;
-    while (i < BP_NHW && bp_hwtab[i])
+    while (i < BP_NHW && proc->bp_hwtab[i])
         ++i;
 
     if (i == BP_NHW)
         return -BP_NHW;
 
-    struct dr7 dr7 = { 0 };
-    dr7_set_hwlabel(&dr7, local, i, 1)
-    dr7_set_hwlabel(&dr7, cond, i, cond)
-    dr7_set_hwlabel(&dr7, len, i, len)
-    dr7.local_exact  = 1;
-    dr7.global_exact = 1;
-    dr7.reserved_1   = 1;
+    long dr7_tst = ptrace(PTRACE_PEEKUSER, bp->a_pid, DR_OFFSET(7), 0);
+    if (dr7_tst == -1) {
+        warn("Could not get %%dr7 from process %d\n", bp->a_pid);
+        return -1;
+    }
 
-    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(0),
+    struct dr7 *dr7 = (struct dr7 *)(&dr7_tst);
+    dr7_set_hwlabel(dr7, local, i, 1)
+    dr7_set_hwlabel(dr7, cond, i, cond)
+    dr7_set_hwlabel(dr7, len, i, len)
+    dr7->local_exact  = 1;
+    dr7->global_exact = 1;
+    dr7->reserved_1   = 1;
+
+    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(i),
                bp->addr) == -1) {
         warn ("Could not put breakpoint's address in %%dr%d", i);
         return -1;
     }
 
-    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(7), dr7) == -1) {
+    if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(7), *dr7) == -1) {
         warn ("Could not setup %%dr7 for %%dr%d", i);
         return -1;
     }
 
-    bp->addr     = (void *)((uintptr_t)bp->addr - 1);
-    bp->sv_instr = i;
+    uintptr_t bp_addr = (uintptr_t)bp->addr;
+    bp->addr    = (void *)(bp_addr - 1);
+    bp->id      = i;
+    proc->bp_hwtab[i] = bp_addr;
     return 0;
 }
 
@@ -75,7 +89,7 @@ int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
 
     if (bp->type == BP_HARDWARE) {
         int ret;
-        if ((ret = bp_hw_poke(bp, BP_HW_INSTR, BP_HW_LEN_1BY)) < 0) {
+        if ((ret = bp_hw_poke(dinfos, bp, BP_HW_INSTR, BP_HW_LEN_1BY)) < 0) {
             if (ret == -BP_NHW)
                 fprintf(stderr, "Too many hardware breakpoint already put\n");
             goto err_destroy_bp;
@@ -93,17 +107,17 @@ int bp_set(struct debug_infos *dinfos, struct breakpoint *bp,
     return 0;
 
 err_destroy_bp:
-    bp_destroy(bp);
+    bp_destroy(dinfos, bp);
     return -1;
 }
 
-int bp_destroy(struct breakpoint *bp)
+int bp_destroy(struct debug_infos *dinfos, struct breakpoint *bp)
 {
     if (!bp)
         return -1;
 
     if (bp->type == BP_HARDWARE) {
-        if (bp_hw_unset(bp->sv_instr, bp->a_pid) == -1)
+        if (bp_hw_unset(dinfos, bp->id, bp->a_pid) == -1)
             return -1;
     } else if (bp->sv_instr && bp->sv_instr != -1) {
         if (set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
@@ -117,9 +131,16 @@ int bp_destroy(struct breakpoint *bp)
     return 0;
 }
 
-int bp_hw_unset(int dr_offset, pid_t pid)
+int bp_hw_unset(struct debug_infos *dinfos, int dr_offset, pid_t pid)
 {
-    long dr7_tst = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(7));
+    struct dproc *proc = dproc_htable_get(pid, dinfos->dproc_table);
+    if (!proc) {
+        fprintf(stderr, "Could not find process %d\n", pid);
+        return -1;
+    }
+
+
+    long dr7_tst = ptrace(PTRACE_PEEKUSER, pid, DR_OFFSET(7), 0);
     if (dr7_tst == -1) {
         if (errno == ESRCH) // Process finished
             return 0;
@@ -135,6 +156,8 @@ int bp_hw_unset(int dr_offset, pid_t pid)
         warn("Could not poke %%dr7 to unset %%dr%d", dr_offset);
         return -1;
     }
+
+    proc->bp_hwtab[dr_offset] = 0;
 
     return 0;
 }
@@ -202,7 +225,7 @@ struct htable *bp_htable_creat(void)
    return htable_creat(addr_hash, BP_HTABLE_SIZE, addr_cmp);
 }
 
-void bp_htable_reset(struct htable *htable)
+void bp_htable_reset(struct debug_infos *dinfos, struct htable *htable)
 {
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
     {
@@ -213,7 +236,7 @@ void bp_htable_reset(struct htable *htable)
             struct data *tmp = pos;
             pos = wl_container_of(pos->link.next, pos, link);
 
-            if (!bp_destroy(tmp->value)) /* If it fails, we are screwed */
+            if (!bp_destroy(dinfos, tmp->value)) // If it fails, we are screwed
                 wl_list_remove(&tmp->link);
 
             free(tmp);
@@ -224,13 +247,11 @@ void bp_htable_reset(struct htable *htable)
     htable->nmemb = 0;
     bp_id         = 1;
     bp_nsys       = 0;
-    for (int i = 0; i < BP_NHW; ++i)
-        bp_hwtab[i] = 0;
 }
 
-void bp_htable_destroy(struct htable *htable)
+void bp_htable_destroy(struct debug_infos *dinfos, struct htable *htable)
 {
-    bp_htable_reset(htable);
+    bp_htable_reset(dinfos, htable);
 
     free(htable->array);
     free(htable);
@@ -245,19 +266,21 @@ struct breakpoint *bp_htable_get(void *addr, struct htable *htable)
     return bp->value;
 }
 
-void bp_htable_remove(struct breakpoint *bp, struct htable *htable)
+void bp_htable_remove(struct debug_infos *dinfos, struct breakpoint *bp,
+                      struct htable *htable)
 {
     struct data *poped = htable_pop(htable, bp->addr);
     if (!poped)
         fprintf(stderr, "Failed to find %p in htable\n", bp->addr);
 
-    bp_destroy(poped->value);
+    bp_destroy(dinfos, poped->value);
     free(poped);
 }
 
-int bp_htable_remove_by_id(long id, struct htable *htable)
+int bp_htable_remove_by_id(struct debug_infos *dinfos, long id, int is_hw,
+                           struct htable *htable)
 {
-    if (id < 1)
+    if (id < 0)
         return -1;
 
     for (size_t i = 0, j = 0; i < htable->size && j < htable->nmemb; ++i)
@@ -266,11 +289,14 @@ int bp_htable_remove_by_id(long id, struct htable *htable)
         struct data *tmp;
         wl_list_for_each(tmp, head, link) {
             struct breakpoint *bp = tmp->value;
-            if (bp->id == id && !bp_destroy(tmp->value)) {
-                wl_list_remove(&tmp->link);
-                free(tmp);
-                htable->nmemb -= 1;
-                return 0;
+            if ((is_hw && bp->type == BP_HARDWARE)
+                || (!is_hw && bp->type != BP_HARDWARE)) {
+                if (bp->id == id && !bp_destroy(dinfos, tmp->value)) {
+                    wl_list_remove(&tmp->link);
+                    free(tmp);
+                    htable->nmemb -= 1;
+                    return 0;
+                }
             }
 
             ++j;
@@ -291,11 +317,16 @@ int bp_htable_insert(struct breakpoint *bp, struct htable *htable)
     if (bp->type == BP_SILENT) // No id, no message
         return ret;
 
-    bp->id = bp_id;
-    ++bp_id;
+    if (bp->type != BP_HARDWARE) { // Id of hardware corresponds to dr offset
+        bp->id = bp_id;
+        ++bp_id;
+    }
 
     if (bp->type == BP_SYSCALL)
         printf("Breakpoint %d set on syscall %zu\n", bp->id, (size_t)bp->addr);
+    else if (bp->type == BP_HARDWARE)
+        printf("Hardware breakpoint dr%d set on 0x%lx\n", bp->id,
+                                                     (uintptr_t)bp->addr + 1);
     else
         printf("Breakpoint %d set at %p\n", bp->id, bp->addr);
 

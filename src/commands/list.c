@@ -72,13 +72,11 @@ int do_list(struct debug_infos *dinfos, char *args[])
             return -1;
     }
 
-    printf("Coucou args done\n");
 
     long addr = get_addr(dinfos->dflt_pid, args, argsc, 2);
     if (addr == -1)
         return -1;
 
-    printf("Coucou addr 0x%lx\n", addr);
     struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);
     if (!procmap) {
         fprintf(stderr, "Could not find the mapping of %s\n", dinfos->args[0]);
@@ -98,7 +96,6 @@ int do_list(struct debug_infos *dinfos, char *args[])
         return -1;
     }
 
-    printf("Coucou gonna print lines");
     return print_lines(dw, line, nb);
 }
 

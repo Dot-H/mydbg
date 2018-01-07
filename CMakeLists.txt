@@ -37,6 +37,7 @@ set(SRC
         src/commands/singlestep.c
         src/commands/step_line.c
         src/commands/next_line.c
+        src/commands/watchpoint.c
         src/dbgprocess/dproc.c
         src/inputs/inputs.c
         src/maps/maps.c

@@ -90,4 +90,16 @@ struct dproc *get_proc(struct debug_infos *dinfos, char *args[], int argsc,
 */
 long get_addr(pid_t pid, char *args[], int argsc, int idx);
 
+/**
+** \param idx Index of the pid
+**
+** \brief Get the pid from either \p args or \p dinfos. The pid is taken
+** from \args if \p idx is smaller than \p argsc.
+**
+** \return Returns the pid on success and -1 otherwise.
+**
+** \note A message is print on stderr if an error occured.
+*/
+int get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx);
+
 #endif /* !ARGS_HELPER_H */

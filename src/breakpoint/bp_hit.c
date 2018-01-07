@@ -18,8 +18,6 @@ static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc);
 static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
                         struct dproc *proc);
-static int hit_relocation(struct debug_infos *dinfos, struct breakpoint *bp,
-                         struct dproc *proc);
 
 /* Handlers' index is given by the value of their type */
 int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
@@ -28,7 +26,6 @@ int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
     hit_temporary,
     hit_temporary, // BP_SILENT handling
     hit_hardware,
-    hit_relocation
 };
 
 static struct breakpoint *bp_out_sys = NULL;
@@ -127,7 +124,7 @@ static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
         goto err_reset_bp;
     }
 
-    bp_htable_remove(bp, dinfos->bp_table);
+    bp_htable_remove(dinfos, bp, dinfos->bp_table);
 
     return 0;
 
@@ -136,118 +133,117 @@ err_reset_bp:
     return -1;
 }
 
+/**
+** \brief Get %dr7 and %dr6 values and fills \p dr7 and \p dr6 with it.
+**
+** \return Return the dr offset on success and -1 in case of error.
+**
+** \note If an error occured, a message is print on stderr.
+*/
+static int get_dr(struct dproc *proc, struct dr7 **dr7, struct dr6 **dr6)
+{
+    long dr6_tst = ptrace(PTRACE_PEEKUSER, proc->pid, DR_OFFSET(6), 0);
+    if (dr6_tst == -1) {
+        warn("Could not get %%dr6 in process %d", proc->pid);
+        return -1;
+    }
+
+    long dr7_tst = ptrace(PTRACE_PEEKUSER, proc->pid, DR_OFFSET(7), 0);
+    if (dr7_tst == -1) {
+        warn("Could not get %%dr7 in process %d", proc->pid);
+        return -1;
+    }
+
+    *dr7 = (struct dr7 *)(&dr7_tst);
+    *dr6 = (struct dr6 *)(&dr6_tst);
+    unsigned i = 0;
+    for (; i < BP_NHW; ++i) {
+        unsigned dtcd;
+        dr_get_hwlabel(*dr6, detected, i, dtcd)
+        if (!dtcd)
+            continue;
+
+        unsigned ena;
+        dr_get_hwlabel(*dr7, local, i, ena);
+        if (ena)
+            break;
+    }
+
+    if (i == BP_NHW) {
+        fprintf(stderr, "Something went wrong in hit_hardware..");
+        return -1;
+    }
+
+    return i;
+}
+
+static long mask_value(struct dr7 *dr7, int dr_offset, long value)
+{
+    enum bp_hw_len dr7_len;
+    dr_get_hwlabel(dr7, len, dr_offset, dr7_len)
+    switch (dr7_len) {
+        case BP_HW_LEN_1BY:
+            return value & 0xFF;
+        case BP_HW_LEN_2BY:
+            return value & 0xFFFF;
+        case BP_HW_LEN_4BY:
+            return value & 0xFFFFFFFF;
+        case BP_HW_LEN_8BY:
+            return value & 0xFFFFFFFFFFFFFFFF;
+    }
+
+    return -1; // Should not happen
+}
+
 static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
                         struct dproc *proc)
 {
     (void)dinfos;
     (void)proc;
-    printf("Hit hardware breakpoint %u at 0x%lx\n", bp->id,
-                                                (uintptr_t)bp->addr + 1);
-    return 0;
-}
-
-static int reset_dr7(struct breakpoint *bp)
-{
-    struct dr7 *dr7;
-    long dr7_tst = ptrace(PTRACE_PEEKUSER, bp->a_pid, 0, DR_OFFSET(7));
-    if (dr7_tst == -1) {
-        warn("Could not get %%dr7 to remove the wp at %p\n", bp->addr);
-        return -1;
-    }
-
-    dr7 = (struct dr7 *)(&dr7_tst);
-    dr7->dr0_local = 0;
-
-    if (bp->count) { // An hardware breakpoint was saved
-        struct dr7 *svd_dr7 = (struct dr7 *)(&bp->count);
-        dr7->dr0_local = 1;
-        dr7->dr0_cond  = svd_dr7->dr0_cond;
-        dr7->dr0_len   = svd_dr7->dr0_len;
-
-        if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(0),
-                   bp->sv_instr) == -1) {
-            warn ("Could not put breakpoint's address in %%dr0");
-            return -1;
-        }
-
-        if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(7), dr7) == -1) {
-            warn ("Could not setup %%dr7 for %%dr0");
-            return -1;
-        }
-    }
+    printf("Hit hardware breakpoint dr%u at 0x%lx\n", bp->id,
+                                            (uintptr_t)bp->addr + 1);
 
     return 0;
 }
 
-static struct breakpoint *setup_wp(uintptr_t addr, pid_t pid)
+static int hit_watchpoint(struct debug_infos *dinfos, struct dproc *proc)
 {
-    struct breakpoint *bp = bp_creat(BP_HARDWARE);
-    bp->a_pid = pid;
-    bp->state = BP_ENABLED;
-    bp->addr  = (void *)addr;
-
-    if (bp_hw_poke(bp, BP_HW_WRONLY, BP_HW_LEN_8BY) == -BP_NHW) {
-        long dr0 = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(0));
-        if (dr0 == -1) {
-            warn("Could not read %%dr0 in order to save it");
-            goto err_destroy_bp;
-        }
-
-        long dr7 = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(7));
-        if (dr7 == -1) {
-            warn("Could not read %%dr7 in order to save %%dr0");
-            goto err_destroy_bp;
-        }
-
-
-        if (bp_hw_unset(0, pid) == -1)
-            goto err_destroy_bp;
-
-        if (bp_hw_poke(bp, BP_HW_WRONLY, BP_HW_LEN_8BY) < 0) {
-            fprintf(stderr, "Could not setup a watchpoint on 0x%lx\n", addr);
-            goto err_destroy_bp;
-        }
-        bp->count    = dr7 & 0xFFFFFFFF; // Save 32lower bits.
-        bp->sv_instr = dr0;
-    }
-
-    return bp;
-
-err_destroy_bp:
-    bp_destroy(bp);
-    return NULL;
-}
-
-static int hit_relocation(struct debug_infos *dinfos, struct breakpoint *bp,
-                          struct dproc *proc)
-{
-    (void)proc;
-    printf("Hit relocation at %p\n", bp->addr);
-    void *addr = bp->addr;
-    pid_t pid  = bp->a_pid;
-    if (bp_destroy(bp) == -1)
+    struct dr7 *dr7 = NULL;
+    struct dr6 *dr6 = NULL;
+    int oft = -1;
+    if ((oft = get_dr(proc, &dr7, &dr6)) == -1)
         return -1;
 
-    if ((bp = setup_wp((uintptr_t)addr, pid)) == NULL)
+    struct breakpoint *bp = bp_htable_get((void *)(proc->bp_hwtab[oft] - 1),
+                                          dinfos->bp_table);
+    if (!bp)
         return -1;
 
-    if (do_continue(dinfos, NULL) == -1)
-        return -1;
+    printf("Hit hardware watchpoint dr%u at 0x%lx\n", bp->id,
+                                            (uintptr_t)bp->addr + 1);
 
-    long got_value = ptrace(PTRACE_PEEKTEXT, bp->a_pid, bp->addr, 0);
-    if (got_value == -1) {
-        warn("Could not get got value after relocation");
+    enum bp_hw_cond dr7_cond = 0;
+    dr_get_hwlabel(dr7, cond, oft, dr7_cond)
+    if (dr7_cond == BP_HW_INSTR)
+        return 0;
+
+    long new_value = ptrace(PTRACE_PEEKTEXT, bp->a_pid, proc->bp_hwtab[oft], 0);
+    if (new_value == -1) {
+        warn("Could not get the new value at 0x%lx in %d\n",
+             proc->bp_hwtab[oft], bp->a_pid);
+        bp->sv_instr = 0;
         return -1;
     }
 
-    printf("got_value: 0x%lx\n", got_value);
+    new_value = mask_value(dr7, oft, new_value);
+    if (new_value == bp->sv_instr) {
+        printf("Read access\n");
+    } else {
+        printf("old value: 0x%ld\nnew value: 0x%ld\n", bp->sv_instr, new_value);
+        bp->sv_instr = new_value;
+    }
 
-    if (reset_dr7(bp) == -1)
-        return -1;
-
-    printf("New address: 0x%lx\n", got_value);
-    bp = bp_creat(BP_CLASSIC);
-    return bp_set(dinfos, bp, (void *)got_value, pid);
+    return 0;
 }
 
 /**
@@ -293,6 +289,18 @@ int bp_sys_hit(struct debug_infos *dinfos, struct dproc *proc)
     return 0;
 }
 
+/**
+** \return Return 0 if no hardware breakpoint are put and 1 otherwise.
+*/
+static int has_hwbp(struct dproc *proc)
+{
+    for (int i = 0; i < BP_NHW; ++i)
+        if (proc->bp_hwtab[i])
+            return 1;
+
+    return 0;
+}
+
 int bp_hit(struct debug_infos *dinfos, struct dproc *proc)
 {
     void *bp_addr = get_stopped_addr(proc);
@@ -300,8 +308,12 @@ int bp_hit(struct debug_infos *dinfos, struct dproc *proc)
         return -1;
 
     struct breakpoint *bp = bp_htable_get(bp_addr, dinfos->bp_table);
-    if (!bp)
+    if (!bp) {
+        if (has_hwbp(proc)) // Hit watchpoint
+            return hit_watchpoint(dinfos, proc);
+
         return -1;
+    }
 
     if (bp->state == BP_HIT || bp->state == BP_DISABLED)
         return -1;

@@ -68,8 +68,9 @@ int print_bps(struct debug_infos *dinfos, char *args[])
             const char *state = state_name(bp->state);
             const char *name  = type_name(bp->type);
             const char *place = bp->type == BP_SYSCALL ? "on syscall" : "at";
-            printf("\t%s %u [%s] %s 0x%lx hit %zu times\n",
-                    name, bp->id, state, place, bp_addr, bp->count);
+            const char *dr    = bp->type == BP_HARDWARE ? "dr" : "";
+            printf("\t%s %s%u [%s] %s 0x%lx hit %zu times\n",
+                    name, dr, bp->id, state, place, bp_addr, bp->count);
             ++j;
         }
     }

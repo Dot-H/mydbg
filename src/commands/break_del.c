@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "commands.h"
 #include "my_dbg.h"
@@ -14,11 +15,13 @@ int do_break_del(struct debug_infos *dinfos, char *args[])
     if (argsc == -1)
         return -1;
 
-    long id = arg_to_long(args[1], 10);
+    int is_hw = !strncmp(args[1], "dr", 2);
+
+    long id = arg_to_long(args[1] + is_hw * 2, 10);
     if (id == -1)
         return -1;
 
-    int ret = bp_htable_remove_by_id(id, dinfos->bp_table);
+    int ret = bp_htable_remove_by_id(dinfos, id, is_hw, dinfos->bp_table);
     if (ret == -1)
         fprintf(stderr, "Breakpoint %ld does not exist\n", id);
 
