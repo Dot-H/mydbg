@@ -27,7 +27,7 @@ static struct dw_file *get_dw_file(struct debug_infos *dinfos, long proc_addr)
 
 int do_breakl(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos) || !has_debug_infos(dinfos))
+    if (!is_traced(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
     int argsc = check_params(args, 2, 3);

@@ -81,7 +81,7 @@ static int parse_args(char *args[], int argsc, enum bp_hw_cond *cond,
 
 int do_wp(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     int argsc = check_params(args, 2, 5);
@@ -128,5 +128,4 @@ err_destroy_bp:
     return -1;
 }
 
-shell_cmd(watchpoint, do_wp, "Put a hardwarre watchpoint on the address, \
-the rights and the size given in argument");
+shell_cmd(watchpoint, do_wp, "Put a hardware watchpoint");

@@ -28,7 +28,7 @@ static inline int has_jumped(struct dw_file *dw, uintptr_t addr,
 
 int do_step_line(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos) || !has_debug_infos(dinfos))
+    if (!is_traced(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
     int argsc = check_params(args, 1, 1);

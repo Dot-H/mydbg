@@ -49,14 +49,14 @@ long arg_to_long(char *arg, int base);
 int check_params(char *args[], long min, long max);
 
 /**
-** \return Returns 1 if the process is running and 0 otherwise.
+** \return Return 1 if mydbg is tracing a process and 0 otherwise.
 **
-** \note If the process is not running, a message is print on stderr.
+** \note If no process are traced, a message is print on stderr.
 */
-int is_running(struct debug_infos *dinfos);
+int is_traced(struct debug_infos *dinfos);
 
 /**
-** \return Returns 1 if the loaded elf has debugging informations and 0
+** \return Return 1 if the loaded elf has debugging informations and 0
 ** otherwise.
 **
 ** \note If the the process has no debugging informations, an error is
@@ -100,6 +100,6 @@ long get_addr(pid_t pid, char *args[], int argsc, int idx);
 **
 ** \note A message is print on stderr if an error occured.
 */
-int get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx);
+pid_t get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx);
 
 #endif /* !ARGS_HELPER_H */

@@ -38,7 +38,7 @@ static int do_print(char *str, size_t len, uintptr_t addr, size_t ninstr)
 
 int do_disas(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     ssize_t nb = 10;
@@ -69,5 +69,4 @@ int do_disas(struct debug_infos *dinfos, char *args[])
     return ret;
 }
 
-shell_cmd(disassemble, do_disas, "Disasassemble N instruction from the current \
-address or the one given as second argument");
+shell_cmd(disassemble, do_disas, "Disassemble N instructions");

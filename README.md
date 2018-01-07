@@ -1,4 +1,4 @@
-mydbg 0.3
+mydbg 0.9
 =========
 
 Description
@@ -14,7 +14,13 @@ Usage
     In order to use the debugger, simply run the my_dbg binary. If
     an argument is provided, this must be a 64bits elf. The argument
     will become the working binary. If desired, it can be overloaded
-    via the file command.
+    via the commands 'file' or 'attach'.
+
+    To debug a process, the process must be traced first. It is done
+    via the commands 'run' or 'attached'.
+
+    Every process traced via 'run' or 'follow-fork on' are killed
+    when mydbg exits.
 
     __Example:__
 
@@ -24,38 +30,57 @@ Usage
 Commands
 --------
 
+    __NOTES:__
+
+        An argument inside brackets is optional.
+
+        The order of the arguments must be respected. If there are multiple
+        optional arguments, every argument n must be given in order to put
+        argument n + 1.
+
+        [PID] is by default the current pid
+        [ADDR] is by default the current address
+
+
+
     help    [CMD]   Print documentation for every command if no argument
                     is specified. Otherwise, print the documentation of
-                    command in argument.
+                    command in argument
 
-    quit            Quit mydbg.
+    quit            Quit mydbg
 
     run     [...]  Run the currently loaded binary if no argument given.
                     Otherwise, the currennt binary is run with the given
-                    arguments.
+                    arguments
 
     file    FILE [...]
                     Load binary given as first argument and store
                     the rest of the arguments in order to run the binary
-                    with it later.
+                    with it later
 
     attach  PID     Attach to the process pointed by pid
 
-    info_process    Print all the running process.
+    info_memory
+            [PID]   Print /proc/[PID]/maps
+
+    info_process    Print all the running process
 
     info_regs       Print the registers of the current process
 
     info_header     Print the elf header of the current loaded file
 
+    backtrace
+            [PID]   Print the call stack from the current addr
+
     break   [ADDR]  Put a breakpoint on the address in argument if any and
-                    on the current address otherwise.
+                    on the current address otherwise
 
     tbreak  [ADDR]  Put a temporary breakpoint on the address in argument if
                     any and on the current address otherwise. A temporary is
-                    hit only one time before being trash.
+                    hit only one time before being trash
 
     breakf  FUNC  Put a breakpoint on the address of the function given in
-                    argument.
+                    argument
 
     breaks  SYSNO   Put a breakpoint at the entry of the syscall number given
                     in argument. The debugger will also stop the process when
@@ -65,7 +90,7 @@ Commands
                     Put a breakpoint at the line given in argument in the
                     current file or the one given in argument. If no file is
                     given in argument my_dbg tries to get the current one
-                    from the current address.
+                    from the current address
 
     watchpoint
             [ADDR] [COND] [LEN] [PID]
@@ -76,7 +101,7 @@ Commands
                     Possible values of COND are 'w' (write) 'rw' (read | right)
                     and the default value is 'w'.
                     Possible values of LEN are '1' (1 byte) '2' (2 byte) '4'
-                    (4 bytes) and '8' (8 bytes).
+                    (4 bytes) and '8' (8 bytes)
 
     break_list      List all the breakpoints
 
@@ -87,14 +112,20 @@ Commands
                     the id must be preceded by 'dr'
 
     continue
-            [PID]   Continue the execution of the pid given in argument.
+            [PID]   Continue the execution of the pid given in argument
 
     singlestep
             [PID]   Execute a unique instruction
 
+
+    step_line       Continue the execution of the tracee until the next line
+                    or subcall
+
+    next_line       Continue the execution of the tracee until the next line
+                    without stopping on the subcalls
     examine $format size start_addr [PID]
                     Print size bytes from start_addr with the format given in
-                    argument.
+                    argument
 
             $i      Disassemble
 
@@ -104,26 +135,18 @@ Commands
 
             $s      null terminated string
 
-    backtrace
-            [PID]   Print the call stack from the current addr
 
     list    [N] [ADDR]
                     List N lines starting from the current one or the addr
                     given in argument. N is by default set to 10 and must
                     be an unsigned integer. Note that to give an address,
-                    N must be given too.
-
-    step_line       Continue the execution of the tracee until the next line
-                    or subcall.
-
-    next_line       Continue the execution of the tracee until the next line
-                    without stopping on the subcalls.
+                    N must be given too
 
     disas   [N] [ADDR] [PID]
                     Disas N instructions starting from the current addr or
                     the one given in argument. N is by default set to 10 and
                     must be an unsigned integer. Note that to give an address,
-                    N must be given too.
+                    N must be given too
 
 Return values
 -------------

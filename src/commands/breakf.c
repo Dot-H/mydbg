@@ -30,7 +30,7 @@ static long got_addr_value(long proc_map_addr, const Elf64_Rela *rela,
 
 int do_breakf(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
        return -1;
 
     int argsc = check_params(args, 2, 2);

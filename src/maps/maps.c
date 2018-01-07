@@ -85,6 +85,23 @@ struct map *parse_maps(struct htable *maps_table, pid_t pid)
     return ret;
 }
 
+int print_maps(pid_t pid)
+{
+    FILE *maps = open_maps(pid);
+    if (!maps)
+        return -1;
+
+    char buf[4096];
+    size_t rd = 0;
+    do {
+        rd = fread(buf, 1, 4096, maps);
+        fwrite(buf, 1, rd, stdout);
+    } while (rd != 0);
+
+    fclose(maps);
+    return 0;
+}
+
 
 void map_destroy(struct map *map)
 {

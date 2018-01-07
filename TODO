@@ -16,6 +16,7 @@ commands:
     [ ] negative argument to list
     [ ] follow fork mode
     [ ] checkpoint / restore
+    [ ] Stop using unw_step: segv when beeing on top of the call stack
 
 breakpoints:
     [ ] completion on breakf

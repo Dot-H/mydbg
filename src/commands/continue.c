@@ -13,7 +13,7 @@
 
 int do_continue(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     int argsc = check_params(args, 1, 2);

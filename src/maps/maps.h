@@ -65,10 +65,18 @@ struct map *map_line(FILE *maps);
 ** \note The first line is returned in order to give informations about
 ** the debugged file.
 **
-** \note An error message is printed on stderr if something went
-** wrong.
+** \note An error message is printed on stderr if something went wrong.
 */
 struct map *parse_maps(struct htable *maps_table, pid_t pid);
+
+/**
+** \brief Print /proc[\p pid]/maps
+**
+** \return return 0 on success and -1 on error
+**
+** \note An error message is printed on stderr if something went wrong.
+*/
+int print_maps(pid_t pid);
 
 /****************************************/
 /*      Wrappers to struct htable       */

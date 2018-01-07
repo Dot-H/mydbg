@@ -27,6 +27,7 @@ set(SRC
         src/commands/file.c
         src/commands/finish.c
         src/commands/help.c
+        src/commands/info_memory.c
         src/commands/info_process.c
         src/commands/info_regs.c
         src/commands/info_header.c

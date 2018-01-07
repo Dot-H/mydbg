@@ -24,7 +24,7 @@ static void print_status(struct dproc *proc)
         fprintf(stderr, "%d continued\n", proc->pid);
 
     } else if (WIFSIGNALED(proc->status)) {
-        fprintf(stderr, "%d terminates by signal %s\n", proc->pid,
+        fprintf(stderr, "%d terminates by signal %s", proc->pid,
                 strsignal(WSTOPSIG(proc->status)));
 
     } else if (WIFSTOPPED(proc->status)) {

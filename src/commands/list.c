@@ -59,7 +59,7 @@ static int print_lines(struct dw_file *dw, size_t lineno, size_t nb)
 
 int do_list(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos) || !has_debug_infos(dinfos))
+    if (!is_traced(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
     ssize_t nb = 10;

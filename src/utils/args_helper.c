@@ -48,7 +48,7 @@ int check_params(char *args[], long min, long max)
     return size;
 }
 
-int is_running(struct debug_infos *dinfos)
+int is_traced(struct debug_infos *dinfos)
 {
     if (!dinfos->melf.elf || !dinfos->dflt_pid) {
         fprintf(stderr, "No running process\n");
@@ -101,7 +101,7 @@ long get_addr(pid_t pid, char *args[], int argsc, int idx)
     return addr;
 }
 
-int get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx)
+pid_t get_pid(struct debug_infos *dinfos, char *args[], int argsc, int idx)
 {
     pid_t pid = dinfos->dflt_pid;
     if (argsc <= idx)

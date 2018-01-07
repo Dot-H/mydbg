@@ -83,7 +83,7 @@ err_free_bp:
 
 int do_next_instr(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     int argsc = check_params(args, 1, 2);

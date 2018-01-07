@@ -11,7 +11,7 @@
 
 int do_breaks(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     int argsc = check_params(args, 2, 2);

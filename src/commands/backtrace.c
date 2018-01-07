@@ -16,7 +16,7 @@
 int do_backtrace(struct debug_infos *dinfos, char *args[])
 {
     int argsc = check_params(args, 1, 2);
-    if (argsc == -1 || !is_running(dinfos))
+    if (argsc == -1 || !is_traced(dinfos))
         return -1;
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 1);

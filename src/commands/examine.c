@@ -38,7 +38,7 @@ static int parse_args(char *args[], char *format,
 
 int do_examine(struct debug_infos *dinfos, char *args[])
 {
-    if (!is_running(dinfos))
+    if (!is_traced(dinfos))
         return -1;
 
     int argsc = check_params(args, 4, 5);
