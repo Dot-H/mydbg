@@ -6,8 +6,6 @@
 #include "my_dbg.h"
 #include "dproc.h"
 
-#define array_size(t) (sizeof(t) / sizeof(*t))
-
 #define print_reg(regs, reg)                                   \
     printf("%s: 0x%llx\n", #reg, regs.reg)
 

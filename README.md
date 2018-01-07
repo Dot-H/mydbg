@@ -38,8 +38,11 @@ Commands
         optional arguments, every argument n must be given in order to put
         argument n + 1.
 
-        [PID] is by default the current pid
-        [ADDR] is by default the current address
+        [PID]  is by default the current pid. The argument muste be given
+               in base 10.
+        [ADDR] is by default the current address. The argument must be given
+               in base 16.
+
 
 
 
@@ -65,9 +68,17 @@ Commands
 
     info_process    Print all the running process
 
-    info_regs       Print the registers of the current process
+    info_regs
+            [PID]   Print the registers from struct user_regs_struct
+                    of the given pid.
 
     info_header     Print the elf header of the current loaded file
+
+    set     REG VAL [PID]
+                    Set the register REG with the value VAL in the process
+                    corresponding to PID. Reg must be a valid field from
+                    the struct user_regs_struct in /usr/include/sys/user.h
+                    and val must be given in base 16.
 
     backtrace
             [PID]   Print the call stack from the current addr
