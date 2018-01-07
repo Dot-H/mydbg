@@ -50,10 +50,33 @@ void reset_melf(struct melf *melf);
 
 Elf64_Phdr *get_dynamic_phdr(Elf64_Ehdr *header);
 
+/**
+** \brief Search for all the function symbols and debugging
+** information present in the elf and if found, fill elf->sym_tab and
+** elf->dw_table with it. If one or both of the table is not filled,
+** the value is set to NULL.
+**
+** \note The \p elf->rela_plt is also set.
+**
+** \note Print on stderr if it founds or not a the phdr, shdr and
+** debugging informations.
+*/
 void get_symbols(struct melf *elf);
 
+
+/**
+** \brief Get the first Elf64_Rela corresponding to \p sym from
+** \p elf->rela_plt.
+*/
 const Elf64_Rela *get_rela(struct melf elf, const Elf64_Sym *sym);
 
+/**
+** \brief Search the first symbol matching \p name in the gnu_hash_table
+** and if not found, search in the \p elf->sym_tab.
+**
+** \return If no symbol match \p name then NULL is returned. Otherwise
+** the corresponding struct Elf64_Sym is returned.
+*/
 const Elf64_Sym *find_symbol(struct melf elf, char *name);
 
 /****************************************/

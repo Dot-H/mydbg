@@ -33,8 +33,12 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
     if (!is_traced(dinfos))
        return -1;
 
-    int argsc = check_params(args, 2, 2);
+    int argsc = check_params(args, 2, 3);
     if (argsc == -1)
+        return -1;
+
+    struct dproc *proc = get_proc(dinfos, args, argsc, 2);
+    if (!proc || !is_running(proc))
         return -1;
 
     const Elf64_Sym *symbol = find_symbol(dinfos->melf, args[1]);

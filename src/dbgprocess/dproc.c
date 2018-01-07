@@ -49,7 +49,7 @@ void dproc_destroy(struct dproc *proc)
 
 int is_finished(struct dproc *proc)
 {
-    return WIFEXITED(proc->status) && WIFSIGNALED(proc->status);
+    return WIFEXITED(proc->status) || WIFSIGNALED(proc->status);
 }
 
 char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,

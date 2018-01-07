@@ -12,6 +12,7 @@
 #define BP_HTABLE_SIZE 10
 #define BP_OPCODE 0xcc
 #define BP_NHW 4 /* Maximum number of hardware breakpoint */
+#define BP_HW_DFLT_DR6 0xffff0ff0
 
 #define DR_OFFSET(x) (((struct user *)0)->u_debugreg + x)
 

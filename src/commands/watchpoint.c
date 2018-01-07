@@ -88,11 +88,11 @@ int do_wp(struct debug_infos *dinfos, char *args[])
     if (argsc == -1)
         return -1;
 
-    int pid = get_pid(dinfos, args, argsc, 4);
-    if (pid == -1)
+    struct dproc *proc = get_proc(dinfos, args, argsc, 4);
+    if (!proc || !is_running(proc))
         return -1;
 
-    long bp_addr = get_addr(pid, args, argsc, 1);
+    long bp_addr = get_addr(proc->pid, args, argsc, 1);
     if (bp_addr == -1)
         return -1;
 
@@ -103,7 +103,7 @@ int do_wp(struct debug_infos *dinfos, char *args[])
 
 
     struct breakpoint *bp = bp_creat(BP_HARDWARE);
-    bp->a_pid = pid;
+    bp->a_pid = proc->pid;
     bp->addr  = (void *)bp_addr;
     bp->state = BP_ENABLED;
 
@@ -113,7 +113,7 @@ int do_wp(struct debug_infos *dinfos, char *args[])
     if (bp_htable_insert(bp, dinfos->bp_table) == -1)
         goto err_destroy_bp;
 
-    bp->sv_instr = ptrace(PTRACE_PEEKTEXT, pid, (void *)bp_addr, 0);
+    bp->sv_instr = ptrace(PTRACE_PEEKTEXT, proc->pid, (void *)bp_addr, 0);
     if (bp->sv_instr == -1 && errno != 0) {
         fprintf(stderr, "Failed to get current value at 0x%lx. Saved value is \
 set to 0\n", bp_addr);

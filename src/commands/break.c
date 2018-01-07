@@ -10,8 +10,12 @@ int do_break(struct debug_infos *dinfos, char *args[])
     if (!is_traced(dinfos))
         return -1;
 
-    int argsc = check_params(args, 1, 2);
+    int argsc = check_params(args, 1, 3);
     if (argsc == -1)
+        return -1;
+
+    struct dproc *proc = get_proc(dinfos, args, argsc, 2);
+    if (!proc || !is_running(proc))
         return -1;
 
     enum bp_type btype = (args[0][0] == 't') ? BP_TEMPORARY : BP_CLASSIC;

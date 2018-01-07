@@ -56,6 +56,13 @@ int check_params(char *args[], long min, long max);
 int is_traced(struct debug_infos *dinfos);
 
 /**
+** \return Return 1 if \p proc is still running and 0 if not.
+**
+** \note If the process is not running, a message is print on stderr
+*/
+int is_running(struct dproc *proc);
+
+/**
 ** \return Return 1 if the loaded elf has debugging informations and 0
 ** otherwise.
 **

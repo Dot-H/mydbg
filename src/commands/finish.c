@@ -18,7 +18,7 @@ int do_finish(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 1);
-    if (!proc)
+    if (!proc || !is_running(proc))
         return -1;
 
     unw_cursor_t cp = proc->unw.c;

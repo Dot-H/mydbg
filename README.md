@@ -83,21 +83,25 @@ Commands
     backtrace
             [PID]   Print the call stack from the current addr
 
-    break   [ADDR]  Put a breakpoint on the address in argument if any and
+    break   [ADDR] [PID]
+                    Put a breakpoint on the address in argument if any and
                     on the current address otherwise
 
-    tbreak  [ADDR]  Put a temporary breakpoint on the address in argument if
+    tbreak  [ADDR] [PID]
+                    Put a temporary breakpoint on the address in argument if
                     any and on the current address otherwise. A temporary is
                     hit only one time before being trash
 
-    breakf  FUNC  Put a breakpoint on the address of the function given in
+    breakf  FUNC [PID]
+                    Put a breakpoint on the address of the function given in
                     argument
 
-    breaks  SYSNO   Put a breakpoint at the entry of the syscall number given
+    breaks  SYSNO [PID]
+                    Put a breakpoint at the entry of the syscall number given
                     in argument. The debugger will also stop the process when
                     returning from the syscall
 
-    breakl  LINE [FILE]
+    breakl  LINE [FILE] [PID]
                     Put a breakpoint at the line given in argument in the
                     current file or the one given in argument. If no file is
                     given in argument my_dbg tries to get the current one
@@ -125,15 +129,25 @@ Commands
     continue
             [PID]   Continue the execution of the pid given in argument
 
+    finish  [PID]   Continue the process execution until returning from the
+                    current function
+
     singlestep
             [PID]   Execute a unique instruction
 
+    next_instr
+            [PID]   Go to the next instruction. If the current instruction is
+                    a call instruction, put a silent breakpoint on the next
+                    instruction and run the code until hitting the breakpoint
 
-    step_line       Continue the execution of the tracee until the next line
+    step_line
+            [PID]   Continue the execution of the tracee until the next line
                     or subcall
 
-    next_line       Continue the execution of the tracee until the next line
+    next_line
+            [PID]   Continue the execution of the tracee until the next line
                     without stopping on the subcalls
+
     examine $format size start_addr [PID]
                     Print size bytes from start_addr with the format given in
                     argument

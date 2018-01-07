@@ -20,7 +20,7 @@ int do_singlestep(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 1);
-    if (!proc)
+    if (!proc || !is_running(proc))
         return -1;
 
     if (bp_cont(dinfos, proc) == -1)

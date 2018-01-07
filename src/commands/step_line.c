@@ -31,8 +31,12 @@ int do_step_line(struct debug_infos *dinfos, char *args[])
     if (!is_traced(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
-    int argsc = check_params(args, 1, 1);
+    int argsc = check_params(args, 1, 2);
     if (argsc == -1)
+        return -1;
+
+    struct dproc *proc = get_proc(dinfos, args, argsc, 1);
+    if (!proc || !is_running(proc))
         return -1;
 
     long addr = get_cur_addr(dinfos->dflt_pid);

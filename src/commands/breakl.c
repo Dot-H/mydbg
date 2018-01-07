@@ -30,8 +30,12 @@ int do_breakl(struct debug_infos *dinfos, char *args[])
     if (!is_traced(dinfos) || !has_debug_infos(dinfos))
         return -1;
 
-    int argsc = check_params(args, 2, 3);
+    int argsc = check_params(args, 2, 4);
     if (argsc == -1)
+        return -1;
+
+    struct dproc *proc = get_proc(dinfos, args, argsc, 3);
+    if (!proc || !is_running(proc))
         return -1;
 
     long lineno = arg_to_long(args[1], 10);

@@ -22,7 +22,7 @@ static int set_fields(struct user_regs_struct *regs, const char *reg,
     if (strcmp(#name,reg) == 0) { \
         regs->name = val;          \
         return 0;                 \
-    }                            
+    }
 
     USER_FIELDS
 
@@ -60,7 +60,7 @@ int do_set_reg(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 3);
-    if (!proc)
+    if (!proc || !is_running(proc))
         return -1;
 
     long val = arg_to_long(args[2], 16);

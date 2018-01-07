@@ -63,7 +63,7 @@ int do_list(struct debug_infos *dinfos, char *args[])
         return -1;
 
     ssize_t nb = 10;
-    int argsc = check_params(args, 1, 3);
+    int argsc = check_params(args, 1, 4);
     if (argsc == -1)
         return -1;
     else if (argsc >= 2) {
@@ -72,6 +72,9 @@ int do_list(struct debug_infos *dinfos, char *args[])
             return -1;
     }
 
+    struct dproc *proc = get_proc(dinfos, args, argsc, 3);
+    if (!proc || !is_running(proc))
+        return -1;
 
     long addr = get_addr(dinfos->dflt_pid, args, argsc, 2);
     if (addr == -1)

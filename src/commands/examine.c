@@ -53,7 +53,7 @@ int do_examine(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct dproc *proc = get_proc(dinfos, args, argsc, 4);
-    if (!proc)
+    if (!proc || !is_running(proc))
         return -1;
 
     char *dumped = read_dproc(dinfos, proc, size, start_addr);

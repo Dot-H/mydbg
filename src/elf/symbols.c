@@ -89,6 +89,17 @@ static void get_ph_infos(Elf64_Ehdr *header, uint16_t *phnum)
 
 }
 
+/**
+** \param strtab Dynamic string table
+** \param symtab Dynamic symbol table
+** \param hashtab Gnu hash table
+** \param name Name of the serached symbol
+**
+** \brief Search \p name in \p hashtab
+**
+** \return On success return the Elf64_Sym corresponding to
+** the symbol \p name. Otherwise, return NULL.
+*/
 static const Elf64_Sym *gnu_lookup(char *strtab, const Elf64_Sym *symtab,
                       const struct gnu_table *hashtab, char *name) {
 
@@ -149,6 +160,14 @@ Elf64_Phdr *get_dynamic_phdr(Elf64_Ehdr *header)
     return phdr;
 }
 
+/**
+** \brief Goes through the program header table in order to fill
+** \p dynsymtab, \p dynstrtab and \p gnutable with the corresponding
+** segments.
+**
+** \return Return -1 if the program header table or one of the segment
+** is not found. Return 0 otherwise.
+*/
 static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
                          char **dynstrtab, struct gnu_table **gnutable)
 {
@@ -182,6 +201,15 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
     return 0;
 }
 
+
+/**
+** \brief Goes through the section header table in order to fill
+** \p symtab, \p strtab and \p rela_plt and \p dwarf with the
+** corresponding section.
+**
+** \return Return -1 if the section header table or one of the section
+** is not found. Return 0 otherwise.
+*/
 static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
                             size_t *symtab_size, char **strtab,
                             Elf64_Rela **rela_plt, struct dwarf *dwarf)
@@ -237,6 +265,12 @@ static int get_static_infos(Elf64_Ehdr *header, Elf64_Sym **symtab,
     return 0;
 }
 
+/**
+** \brief Fill \p elf->sym_table with all the functions symbols found in
+** the elf. Insert first the symbols from the dynamic symbol table in
+** order to use the offset to compute the idx in the relaction table.
+** All symbols left are taken from the symbolique table.
+*/
 static void fill_sym_table(struct melf *elf, Elf64_Sym *symtab,
                            size_t symtab_size)
 {
@@ -322,7 +356,7 @@ const Elf64_Rela *get_rela(struct melf elf, const Elf64_Sym *sym)
     uint16_t sym_idx = idx_from_oft(elf.dynsymtab, sym, sizeof(Elf64_Sym));
 
     Elf64_Rela *tmp = elf.rela_plt;
-    while (ELF64_R_SYM(tmp->r_info) != sym_idx) // Must be in it
+    while (ELF64_R_SYM(tmp->r_info) != sym_idx) // Has to be in it
         ++tmp;
 
     return tmp;

@@ -169,12 +169,23 @@ static int get_dr(struct dproc *proc, struct dr7 **dr7, struct dr6 **dr6)
             break;
     }
 
-    if (i == BP_NHW) {
-        fprintf(stderr, "Something went wrong in hit_hardware..");
+
+    if (i == BP_NHW)
+        return -1;
+
+    return i;
+}
+
+static int reset_dr6(struct dproc *proc, struct dr6 *dr6)
+{
+    long dr6_tst = BP_HW_DFLT_DR6;
+    dr6 = (struct dr6 *)(&dr6_tst);
+    if (ptrace(PTRACE_POKEUSER, proc->pid, DR_OFFSET(6), *dr6) == -1) {
+        warn("Failed to reset dr6 in %d", proc->pid);
         return -1;
     }
 
-    return i;
+    return 0;
 }
 
 static long mask_value(struct dr7 *dr7, int dr_offset, long value)
@@ -212,7 +223,7 @@ static int hit_watchpoint(struct debug_infos *dinfos, struct dproc *proc)
     struct dr6 *dr6 = NULL;
     int oft = -1;
     if ((oft = get_dr(proc, &dr7, &dr6)) == -1)
-        return -1;
+        return 0;
 
     struct breakpoint *bp = bp_htable_get((void *)(proc->bp_hwtab[oft] - 1),
                                           dinfos->bp_table);
@@ -243,7 +254,7 @@ static int hit_watchpoint(struct debug_infos *dinfos, struct dproc *proc)
         bp->sv_instr = new_value;
     }
 
-    return 0;
+    return reset_dr6(proc, dr6);
 }
 
 /**

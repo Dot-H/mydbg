@@ -51,7 +51,17 @@ int check_params(char *args[], long min, long max)
 int is_traced(struct debug_infos *dinfos)
 {
     if (!dinfos->melf.elf || !dinfos->dflt_pid) {
-        fprintf(stderr, "No running process\n");
+        fprintf(stderr, "No traced process\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+int is_running(struct dproc *proc)
+{
+    if (is_finished(proc)) {
+        fprintf(stderr, "%d is not running anymore\n", proc->pid);
         return 0;
     }
 

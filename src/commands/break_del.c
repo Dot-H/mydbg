@@ -15,6 +15,13 @@ int do_break_del(struct debug_infos *dinfos, char *args[])
     if (argsc == -1)
         return -1;
 
+    struct dproc *proc = get_proc(dinfos, args, argsc, 3);
+    if (!proc)
+        return -1;
+
+    if (!is_running(proc))
+        return -1;
+
     int is_hw = !strncmp(args[1], "dr", 2);
 
     long id = arg_to_long(args[1] + is_hw * 2, 10);
