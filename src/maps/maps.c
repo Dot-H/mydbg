@@ -66,13 +66,14 @@ struct map *map_line(FILE *maps)
     return mapd_line;
 }
 
-int parse_maps(struct htable *maps_table, pid_t pid)
+struct map *parse_maps(struct htable *maps_table, pid_t pid)
 {
     FILE *maps = open_maps(pid);
     if (!maps)
-        return -1;
+        return NULL;
 
     struct map *line = map_line(maps);
+    struct map *ret  = line;
     while (line != END) {
         if (line && map_htable_insert(line, maps_table) == -1)
             map_destroy(line);
@@ -81,7 +82,7 @@ int parse_maps(struct htable *maps_table, pid_t pid)
     }
 
     fclose(maps);
-    return 0;
+    return ret;
 }
 
 

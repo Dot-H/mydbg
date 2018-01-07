@@ -20,7 +20,7 @@
 ** it will rarely happend and not in a time-critic situation.
 */
 struct map {
-    char *line; /* Contains the line */
+    char *line; /* Contains the allocated line */
     uint8_t ofts[NOFTS]; /* Ofts:
                           0: start
                           1: end
@@ -60,12 +60,15 @@ struct map *map_line(FILE *maps);
 ** /proc/[pid]/maps. In case of failure, the hashtable given in
 ** argument is untouched.
 **
-** \return 0 if \p maps_table is filled and -1 otherwise.
+** \return the first line if \p maps_table is filled and NULL otherwise.
+**
+** \note The first line is returned in order to give informations about
+** the debugged file.
 **
 ** \note An error message is printed on stderr if something went
 ** wrong.
 */
-int parse_maps(struct htable *maps_table, pid_t pid);
+struct map *parse_maps(struct htable *maps_table, pid_t pid);
 
 /****************************************/
 /*      Wrappers to struct htable       */

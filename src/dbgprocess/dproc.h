@@ -12,7 +12,7 @@
 # include "hash_table.h"
 # include "my_dbg.h"
 
-# define DPROC_HTABLE_SIZE 10
+# define DPROC_HTABLE_SIZE 2
 
 struct unwind {
     struct UPT_info *ui;
@@ -24,6 +24,7 @@ struct unwind {
 struct dproc {
    pid_t pid;
    int status;
+   int is_attached;
    siginfo_t siginfo; /* Last signal received by \p pid */
    struct unwind unw;
 };

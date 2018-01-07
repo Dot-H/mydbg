@@ -48,7 +48,6 @@ int load_file(struct debug_infos *dinfos, char *args[])
     }
 
     fprintf(stderr, "loading %s ...\n", file);
-    fflush(stdout);
 
     empty_debug_infos(dinfos);
     size_t size = 0;

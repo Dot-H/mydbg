@@ -1,9 +1,10 @@
-#include <stdio.h>
 #include <err.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ptrace.h>
-#include <sys/user.h>
 #include <sys/reg.h>
+#include <sys/user.h>
 
 #include "breakpoint.h"
 #include "commands.h"
@@ -17,6 +18,8 @@ static int hit_temporary(struct debug_infos *dinfos, struct breakpoint *bp,
                          struct dproc *proc);
 static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
                         struct dproc *proc);
+static int hit_relocation(struct debug_infos *dinfos, struct breakpoint *bp,
+                         struct dproc *proc);
 
 /* Handlers' index is given by the value of their type */
 int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
@@ -24,7 +27,8 @@ int (*bp_handlers[])(struct debug_infos *dinfos, struct breakpoint *bp,
     hit_classic,
     hit_temporary,
     hit_temporary, // BP_SILENT handling
-    hit_hardware
+    hit_hardware,
+    hit_relocation
 };
 
 static struct breakpoint *bp_out_sys = NULL;
@@ -140,6 +144,110 @@ static int hit_hardware(struct debug_infos *dinfos, struct breakpoint *bp,
     printf("Hit hardware breakpoint %u at 0x%lx\n", bp->id,
                                                 (uintptr_t)bp->addr + 1);
     return 0;
+}
+
+static int reset_dr7(struct breakpoint *bp)
+{
+    struct dr7 *dr7;
+    long dr7_tst = ptrace(PTRACE_PEEKUSER, bp->a_pid, 0, DR_OFFSET(7));
+    if (dr7_tst == -1) {
+        warn("Could not get %%dr7 to remove the wp at %p\n", bp->addr);
+        return -1;
+    }
+
+    dr7 = (struct dr7 *)(&dr7_tst);
+    dr7->dr0_local = 0;
+
+    if (bp->count) { // An hardware breakpoint was saved
+        struct dr7 *svd_dr7 = (struct dr7 *)(&bp->count);
+        dr7->dr0_local = 1;
+        dr7->dr0_cond  = svd_dr7->dr0_cond;
+        dr7->dr0_len   = svd_dr7->dr0_len;
+
+        if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(0),
+                   bp->sv_instr) == -1) {
+            warn ("Could not put breakpoint's address in %%dr0");
+            return -1;
+        }
+
+        if (ptrace(PTRACE_POKEUSER, bp->a_pid, DR_OFFSET(7), dr7) == -1) {
+            warn ("Could not setup %%dr7 for %%dr0");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static struct breakpoint *setup_wp(uintptr_t addr, pid_t pid)
+{
+    struct breakpoint *bp = bp_creat(BP_HARDWARE);
+    bp->a_pid = pid;
+    bp->state = BP_ENABLED;
+    bp->addr  = (void *)addr;
+
+    if (bp_hw_poke(bp, BP_HW_WRONLY, BP_HW_LEN_8BY) == -BP_NHW) {
+        long dr0 = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(0));
+        if (dr0 == -1) {
+            warn("Could not read %%dr0 in order to save it");
+            goto err_destroy_bp;
+        }
+
+        long dr7 = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(7));
+        if (dr7 == -1) {
+            warn("Could not read %%dr7 in order to save %%dr0");
+            goto err_destroy_bp;
+        }
+
+
+        if (bp_hw_unset(0, pid) == -1)
+            goto err_destroy_bp;
+
+        if (bp_hw_poke(bp, BP_HW_WRONLY, BP_HW_LEN_8BY) < 0) {
+            fprintf(stderr, "Could not setup a watchpoint on 0x%lx\n", addr);
+            goto err_destroy_bp;
+        }
+        bp->count    = dr7 & 0xFFFFFFFF; // Save 32lower bits.
+        bp->sv_instr = dr0;
+    }
+
+    return bp;
+
+err_destroy_bp:
+    bp_destroy(bp);
+    return NULL;
+}
+
+static int hit_relocation(struct debug_infos *dinfos, struct breakpoint *bp,
+                          struct dproc *proc)
+{
+    (void)proc;
+    printf("Hit relocation at %p\n", bp->addr);
+    void *addr = bp->addr;
+    pid_t pid  = bp->a_pid;
+    if (bp_destroy(bp) == -1)
+        return -1;
+
+    if ((bp = setup_wp((uintptr_t)addr, pid)) == NULL)
+        return -1;
+
+    if (do_continue(dinfos, NULL) == -1)
+        return -1;
+
+    long got_value = ptrace(PTRACE_PEEKTEXT, bp->a_pid, bp->addr, 0);
+    if (got_value == -1) {
+        warn("Could not get got value after relocation");
+        return -1;
+    }
+
+    printf("got_value: 0x%lx\n", got_value);
+
+    if (reset_dr7(bp) == -1)
+        return -1;
+
+    printf("New address: 0x%lx\n", got_value);
+    bp = bp_creat(BP_CLASSIC);
+    return bp_set(dinfos, bp, (void *)got_value, pid);
 }
 
 /**

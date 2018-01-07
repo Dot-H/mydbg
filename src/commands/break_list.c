@@ -27,12 +27,12 @@ const char *type_name(enum bp_type type)
             return "breakpoint";
         case BP_TEMPORARY:
             return "temporary breakpoint";
-        case BP_SILENT:
-            return "";
         case BP_HARDWARE:
             return "hardware breakpoint";
         case BP_SYSCALL:
             return "syscall breakpoint";
+        default:
+            return "";
     }
 
     return "???";

@@ -4,15 +4,13 @@ portability:
     [ ] 32bits elf support
 
 debug symbols:
-    [ ] use .debug_abbrev section to file dw_table
+    [ ] use .debug_abbrev section to fill dw_table
 
 interaction:
     [ ] Ctrl-C stops current instruction if in interactive mode
         and send sigstop to tracee if not
 
 commands:
-    [ ] passing argument to run
-    [ ] reset all pids in bp_table when running again
     [ ] add pid argument to break
     [ ] examine $d
     [ ] examine $s: escape non printable arguments
@@ -20,6 +18,7 @@ commands:
     [ ] negative argument to list
 
 breakpoints:
+    [ ] Add needed symbols from shared library on load
     [ ] completion on breakf
 
 global:

@@ -30,4 +30,7 @@ backtrace:
 .PHONY: clean check backtrace nopie backtrace_dbg
 clean:
 	${RM} ${OBJ}
+	${RM} ${OBJ_TST}
+	${RM} ${OBJ_BT}
 	${RM} test
+	${RM} backtrace

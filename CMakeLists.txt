@@ -11,6 +11,7 @@ include_directories("src/" "src/elf" "src/inputs" "src/commands" "\
 set(SRC
         src/breakpoint/bp_hit.c
         src/breakpoint/breakpoint.c
+        src/commands/attach.c
         src/commands/backtrace.c
         src/commands/break_del.c
         src/commands/break_list.c

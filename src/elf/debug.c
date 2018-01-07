@@ -42,7 +42,7 @@ struct dw_file *dw_file_creat(void)
     new->mfile    = NULL;
     new->msize    = 0;
     new->hdr      = NULL;
-    new->start    = 1; 
+    new->start    = 1;
     new->end      = 0;
 
     return new;
@@ -142,7 +142,7 @@ static inline int8_t add_line(const struct dw_hdrline *hdr, uint8_t opcode) {
 ** \return Return the number of opcode to jump to get to the next opcode of
 ** interest.
 */
-static uint8_t hit_extd(struct dw_file *dw_file, uintptr_t *addr, 
+static uint8_t hit_extd(struct dw_file *dw_file, uintptr_t *addr,
                         const uint8_t *opcodes)
 {
     uint8_t len = opcodes[0];
@@ -319,7 +319,7 @@ intptr_t get_next_line_addr(struct htable *dw_table, uintptr_t addr,
 
 /**
 ** \brief open the \p dw's filename attribute, using the dir_idx attribute
-** if different from 0. 
+** if different from 0.
 **
 ** \return Return the opened file descriptor on success and -1 otherwise.
 **
@@ -367,7 +367,7 @@ char *dw_map(struct dw_file *dw)
     }
 
     dw->msize = st.st_size;
-	dw->mfile = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    dw->mfile = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (dw->mfile == MAP_FAILED) {
         dw->mfile = NULL;
         dw->msize = 0;
@@ -434,7 +434,7 @@ struct dw_file *dw_htable_search_by_addr(uintptr_t addr,
 
             ++j;
         }
-    }   
+    }
 
     return NULL;
 }

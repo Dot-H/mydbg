@@ -11,14 +11,33 @@
 #define TRAP_BRKPT 1
 #define BP_HTABLE_SIZE 10
 #define BP_OPCODE 0xcc
-#define BP_NHW 4
+#define BP_NHW 4 /* Maximum number of hardware breakpoint */
+
+#define DR_OFFSET(x) (((struct user *)0)->u_debugreg + x)
+
+#define dr7_set_hwlabel(dr7, label, idx, val)   \
+    switch (idx) {                              \
+        case 0:                                 \
+            (dr7)->dr0_##label = val;           \
+            break;                              \
+        case 1:                                 \
+            (dr7)->dr1_##label = val;           \
+            break;                              \
+        case 2:                                 \
+            (dr7)->dr2_##label = val;           \
+            break;                              \
+        case 3:                                 \
+            (dr7)->dr3_##label = val;           \
+            break;                              \
+    }                                           \
 
 /* bp_type's value gives the index in the bp_handlers (bp_hit.c) */
 enum bp_type {
-    BP_CLASSIC   = 0,
-    BP_TEMPORARY = 1,
-    BP_SILENT    = 2, /* Used as for intern operations (finish, line_step..) */
-    BP_HARDWARE  = 3,
+    BP_CLASSIC    = 0,
+    BP_TEMPORARY  = 1,
+    BP_SILENT     = 2, /* Used as for intern operations (finish, line_step..) */
+    BP_HARDWARE   = 3,
+    BP_RELOCATION = 4, /* Used for intern break on shared library got address */
     BP_SYSCALL,
 };
 
@@ -139,6 +158,8 @@ void bp_htable_reset(struct htable *htable);
 ** \p bp has not been destroyed.
 */
 int bp_destroy(struct breakpoint *bp);
+
+int bp_hw_unset(int dr_offset, pid_t pid);
 
 /**
 ** \param dinfos Envirnment containing the breakpoint table.

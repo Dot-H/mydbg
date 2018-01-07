@@ -1,4 +1,5 @@
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -18,23 +19,6 @@ static size_t bp_id = 1;
 static size_t bp_nsys = 0;
 static int bp_hwtab[BP_NHW] = { 0 }; // 1 if register is set
 
-#define DR_OFFSET(x) (((struct user *)0)->u_debugreg + x)
-#define dr7_set_hwlabel(dr7, label, idx, val)   \
-    switch (idx) {                              \
-        case 0:                                 \
-            dr7.dr0_##label = val;              \
-            break;                              \
-        case 1:                                 \
-            dr7.dr1_##label = val;              \
-            break;                              \
-        case 2:                                 \
-            dr7.dr2_##label = val;              \
-            break;                              \
-        case 3:                                 \
-            dr7.dr3_##label = val;              \
-            break;                              \
-    }                                           \
-
 struct breakpoint *bp_creat(enum bp_type type)
 {
     struct breakpoint *new = calloc(1, sizeof(struct breakpoint));
@@ -44,7 +28,7 @@ struct breakpoint *bp_creat(enum bp_type type)
     if (type == BP_SYSCALL)
         ++bp_nsys;
 
-    new->type = type;
+    new->type  = type;
     return new;
 }
 
@@ -59,9 +43,9 @@ int bp_hw_poke(struct breakpoint *bp, enum bp_hw_cond cond, enum bp_hw_len len)
         return -BP_NHW;
 
     struct dr7 dr7 = { 0 };
-    dr7_set_hwlabel(dr7, local, i, 1)
-    dr7_set_hwlabel(dr7, cond, i, cond)
-    dr7_set_hwlabel(dr7, len, i, len)
+    dr7_set_hwlabel(&dr7, local, i, 1)
+    dr7_set_hwlabel(&dr7, cond, i, cond)
+    dr7_set_hwlabel(&dr7, len, i, len)
     dr7.local_exact  = 1;
     dr7.global_exact = 1;
     dr7.reserved_1   = 1;
@@ -77,7 +61,8 @@ int bp_hw_poke(struct breakpoint *bp, enum bp_hw_cond cond, enum bp_hw_len len)
         return -1;
     }
 
-    bp->addr = (void *)((uintptr_t)bp->addr - 1);
+    bp->addr     = (void *)((uintptr_t)bp->addr - 1);
+    bp->sv_instr = i;
     return 0;
 }
 
@@ -117,14 +102,40 @@ int bp_destroy(struct breakpoint *bp)
     if (!bp)
         return -1;
 
-    if (bp->sv_instr && bp->sv_instr != -1)
+    if (bp->type == BP_HARDWARE) {
+        if (bp_hw_unset(bp->sv_instr, bp->a_pid) == -1)
+            return -1;
+    } else if (bp->sv_instr && bp->sv_instr != -1) {
         if (set_opcode(bp->a_pid, bp->sv_instr, bp->addr) == -1)
             return -1;
+    }
 
     if (bp->type == BP_SYSCALL)
         --bp_nsys;
 
     free(bp);
+    return 0;
+}
+
+int bp_hw_unset(int dr_offset, pid_t pid)
+{
+    long dr7_tst = ptrace(PTRACE_PEEKUSER, pid, 0, DR_OFFSET(7));
+    if (dr7_tst == -1) {
+        if (errno == ESRCH) // Process finished
+            return 0;
+
+        warn("Could not get %%dr%d and unset it", dr_offset);
+        return -1;
+    }
+
+    struct dr7 *dr7 = (struct dr7 *)(&dr7_tst);
+    dr7_set_hwlabel(dr7, local, dr_offset, 0);
+
+    if (ptrace(PTRACE_POKEUSER, pid, DR_OFFSET(7), *dr7) == -1) {
+        warn("Could not poke %%dr7 to unset %%dr%d", dr_offset);
+        return -1;
+    }
+
     return 0;
 }
 

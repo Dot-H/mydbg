@@ -29,7 +29,6 @@ static void print_status(struct dproc *proc)
 
     } else if (WIFSTOPPED(proc->status)) {
         if (WSTOPSIG(proc->status) & 0x80) {
-//            fprintf(stderr, "%d hit syscall\n", proc->pid);
             return; // Reported in bp_hit if interesting
         } else
             fprintf(stderr, "%d stopped by signal %s\n", proc->pid,
@@ -62,6 +61,38 @@ void wait_tracee(struct debug_infos *dinfos, struct dproc *proc)
     }
 }
 
+int wait_attach(struct dproc *proc)
+{
+    while (1) {
+        waitpid(proc->pid, &proc->status, 0);
+        if (WIFEXITED(proc->status)) {
+            fprintf(stderr, "%d exited with code %d before beeing attached\n",
+                    proc->pid, WEXITSTATUS(proc->status));
+                return -1;
+        } else if (WIFSIGNALED(proc->status)) {
+            fprintf(stderr, "%d terminates by signal %s before beeing attached\n",
+                    proc->pid, strsignal(WSTOPSIG(proc->status)));
+            return -1;
+        }
+
+        int sig = 0;
+        if (WIFSTOPPED(proc->status)) {
+            sig = WSTOPSIG(proc->status);
+            if (sig == SIGSTOP)
+                break;
+        }
+
+        if (ptrace(PTRACE_CONT, proc->pid, 0, sig) == -1)
+            goto err_ptrace_cont;
+    }
+
+    return 0;
+
+err_ptrace_cont:
+    warn("Could not continue %d", proc->pid);
+    return -1;
+}
+
 int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
 {
     if (!dinfos->melf.elf)
@@ -81,8 +112,6 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
     }
 
     proc->pid = pid;
-
-
     proc->unw.ui = _UPT_create(pid);
     if (!proc->unw.ui) {
         fprintf(stderr, "_UPT_create failed\n");
@@ -93,7 +122,7 @@ int trace_binary(struct debug_infos *dinfos, struct dproc *proc)
     wait_tracee(dinfos, proc);
     if (ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD
                                         | PTRACE_O_EXITKILL) == -1)
-        goto err_print_errno;
+        goto err_empty_dinfos;
 
     return pid;
 
@@ -104,6 +133,31 @@ err_print_errno:
     if (pid == 0)
         exit(1);
     return -1;
+}
+
+int attach_proc(struct dproc *proc)
+{
+    proc->is_attached = 1;
+    if (ptrace(PTRACE_ATTACH, proc->pid, 0, 0) == -1) {
+        warn("Could not attach to %d", proc->pid);
+        return -1;
+    }
+
+    if (wait_attach(proc) == -1)
+        return -1;
+
+    proc->unw.ui = _UPT_create(proc->pid);
+    if (!proc->unw.ui) {
+        fprintf(stderr, "_UPT_create failed\n");
+        return -1;
+    }
+
+    if (ptrace(PTRACE_SETOPTIONS, proc->pid, 0, PTRACE_O_TRACESYSGOOD) == -1) {
+        warn("Could not set ptrace options of %d\n", proc->pid);
+        return -1;
+    }
+
+    return 0;
 }
 
 long set_opcode(pid_t pid, long opcode, void *addr)
@@ -117,16 +171,12 @@ long set_opcode(pid_t pid, long opcode, void *addr)
         return -1;
     }
 
-//    printf("peeked %lx\n", saved_data);
-
     opcode &= 0xff;
     long new_data = ((saved_data & ~(0xff)) | opcode);
     if (ptrace(PTRACE_POKETEXT, pid, addr, new_data) == -1) {
         warn("Failed to POKETEXT %lx in %d at %p", new_data, pid, addr);
         return -1;
     }
-
-//    printf("poked %lx\n", new_data);
 
     return saved_data & 0xff;
 }

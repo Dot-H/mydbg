@@ -40,8 +40,10 @@ int do_next_line(struct debug_infos *dinfos, char *args[])
         return -1;
 
     struct map *procmap = map_htable_get(dinfos->args[0], dinfos->maps_table);
-    if (!procmap)
+    if (!procmap) {
+        fprintf(stderr, "Could not find the mapping of %s\n", dinfos->args[0]);
         return -1;
+    }
 
     long proc_addr = arg_to_long(procmap->line, 16);
     if (proc_addr == -1)
