@@ -8,6 +8,7 @@
 int c(int val)
 {
     printf("c: %lx\n", (uintptr_t)c);
+    printf("This is a test string\n");
     fflush(stdout);
     int titi = val + 1;
     return titi;

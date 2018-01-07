@@ -12,13 +12,12 @@ interaction:
 
 commands:
     [ ] add pid argument to break
-    [ ] examine $d
-    [ ] examine $s: escape non printable arguments
     [ ] argument N to singlestep and next_instr
     [ ] negative argument to list
+    [ ] follow fork mode
+    [ ] checkpoint / restore
 
 breakpoints:
-    [ ] Add needed symbols from shared library on load
     [ ] completion on breakf
     [ ] Break on syscall before plt relocation
         [ ] Search missing symbols offset in shared library and wait

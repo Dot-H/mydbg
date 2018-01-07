@@ -1,4 +1,6 @@
+#include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 #include <capstone/capstone.h>
 
 #include "print_func.h"
@@ -40,7 +42,7 @@ static inline void print_addr(uintptr_t addr)
     printf("0x%lx:", addr);
 }
 
-static void hexa_print_32(char *str, int nb)
+static void hexa_print_32b(const char *str, int nb)
 {
     int int_size = sizeof(int);
     if (int_size > nb)
@@ -51,7 +53,19 @@ static void hexa_print_32(char *str, int nb)
         printf("%02hhx", str[i]);
 }
 
-void hexa_print(char *str, size_t len, uintptr_t addr)
+static void dec_print_32b(const char *str, int nb)
+{
+    int int_size = sizeof(int);
+    if (int_size > nb)
+        int_size = nb;
+
+    int print;
+    memcpy(&print, str, int_size);
+    printf("%d", print);
+}
+
+static void dword_print(char *str, size_t len, uintptr_t addr,
+                        void (*func)(const char *str, int nb))
 {
     if (len == 0)
         return;
@@ -61,7 +75,7 @@ void hexa_print(char *str, size_t len, uintptr_t addr)
 
     print_addr(addr);
     putchar('\t');
-    hexa_print_32(str, len);
+    func(str, len);
     len -= int_size;
 
     for (size_t i = 1; i < nb_print; ++i) {
@@ -72,18 +86,43 @@ void hexa_print(char *str, size_t len, uintptr_t addr)
         }
 
         putchar('\t');
-        hexa_print_32(str + oft, len);
+        func(str + oft, len);
         len -= int_size;
     }
 
     putchar('\n');
 }
 
+void hexa_print(char *str, size_t len, uintptr_t addr)
+{
+    dword_print(str, len, addr, hexa_print_32b);
+}
+
 void decimal_print(char *str, size_t len, uintptr_t addr)
 {
-    (void)str;
-    (void)len;
-    (void)addr;
+    dword_print(str, len, addr, dec_print_32b);
+}
+
+
+/**
+** \brief print \p str until encountering a null byte or printing
+** \p len character. Non printable characters are escaped and the
+** last character print is followed by a newline.
+**
+** \return Return the number of character print plus one for the
+** nullbyte.
+*/
+static int print_string(const char *str, int len)
+{
+    int cnt = 0;
+    for (; cnt < len && str[cnt]; ++cnt) {
+        if (isprint(str[cnt]))
+            putchar(str[cnt]);
+        else
+            printf("\\x%02x", str[cnt] & 0xff);
+    }
+
+    return cnt + 1;
 }
 
 void string_print(char *str, size_t len, uintptr_t addr)
@@ -91,14 +130,14 @@ void string_print(char *str, size_t len, uintptr_t addr)
     if (len == 0)
         return;
 
-    print_addr(addr);
     int ilen = len;
-    int cnt  = printf("\t\"%s\"", str);
-
+    int cnt = 0;
     while (cnt < ilen)
     {
-        print_addr(addr);
-        cnt += printf("\t\"%s\"\n", str);
+        print_addr(addr + cnt);
+        printf("\t\"");
+        cnt += print_string(str + cnt, len - cnt);
+        printf("\"\n");
     }
 }
 
