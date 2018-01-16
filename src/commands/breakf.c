@@ -67,6 +67,8 @@ int do_breakf(struct debug_infos *dinfos, char *args[])
         bp_addr = tst;
     }
 
+    printf("dt_debug: 0x%lx\n", proc_map_addr + dinfos->melf.dt_debug_oft);
+
     struct breakpoint *bp = bp_creat(BP_CLASSIC);
     return bp_set(dinfos, bp, (void *)bp_addr, dinfos->dflt_pid);
 }

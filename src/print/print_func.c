@@ -27,7 +27,7 @@ int is_valid_format(char *format)
    return 0;
 }
 
-void (*get_print_func(char format))(char *, size_t, uintptr_t)
+print_func_t get_print_func(char format)
 {
    size_t len = array_size(print_functions);
    for (size_t i = 0; i < len; ++i)
@@ -93,13 +93,15 @@ static void dword_print(char *str, size_t len, uintptr_t addr,
     putchar('\n');
 }
 
-void hexa_print(char *str, size_t len, uintptr_t addr)
+void hexa_print(struct dproc *proc, char *str, size_t len, uintptr_t addr)
 {
+    (void)proc;
     dword_print(str, len, addr, hexa_print_32b);
 }
 
-void decimal_print(char *str, size_t len, uintptr_t addr)
+void decimal_print(struct dproc *proc, char *str, size_t len, uintptr_t addr)
 {
+    (void)proc;
     dword_print(str, len, addr, dec_print_32b);
 }
 
@@ -118,15 +120,20 @@ static int print_string(const char *str, int len)
     for (; cnt < len && str[cnt]; ++cnt) {
         if (isprint(str[cnt]))
             putchar(str[cnt]);
-        else
-            printf("\\x%02x", str[cnt] & 0xff);
+        else {
+            if (str[cnt] == '\n')
+                printf("\\n");
+            else
+                printf("\\x%02x", str[cnt] & 0xff);
+        }
     }
 
     return cnt + 1;
 }
 
-void string_print(char *str, size_t len, uintptr_t addr)
+void string_print(struct dproc *proc, char *str, size_t len, uintptr_t addr)
 {
+    (void)proc;
     if (len == 0)
         return;
 
@@ -141,17 +148,16 @@ void string_print(char *str, size_t len, uintptr_t addr)
     }
 }
 
-void instr_print(char *str, size_t len, uintptr_t addr)
+void instr_print(struct dproc *proc, char *str, size_t len, uintptr_t addr)
 {
-    csh handle;
     cs_insn *insn;
 
-    if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK) {
+    if (cs_open(CS_ARCH_X86, CS_MODE_64, &proc->handle) != CS_ERR_OK) {
         fprintf(stderr, "Failed to initialize capstone\n");
         return;
     }
 
-    size_t count = cs_disasm(handle, (uint8_t *)str, len, addr, 0, &insn);
+    size_t count = cs_disasm(proc->handle, (uint8_t *)str, len, addr, 0, &insn);
     if (count > 0) {
         for (size_t j = 0; j < count; j++) {
             printf("0x%lx:\t%s\t\t%s\n", insn[j].address,
@@ -162,7 +168,4 @@ void instr_print(char *str, size_t len, uintptr_t addr)
     }
     else
         fprintf(stderr, "Failed to disassemble given code\n");
-
-
-    cs_close(&handle);
 }

@@ -169,17 +169,22 @@ Elf64_Phdr *get_dynamic_phdr(Elf64_Ehdr *header)
 ** is not found. Return 0 otherwise.
 */
 static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
-                         char **dynstrtab, struct gnu_table **gnutable)
+                         char **dynstrtab, struct gnu_table **gnutable,
+                         uintptr_t *dt_debug_oft)
 {
-    *dynsymtab = NULL;
-    *dynstrtab = NULL;
-    *gnutable  = NULL;
+    *dynsymtab    = NULL;
+    *dynstrtab    = NULL;
+    *gnutable     = NULL;
+    *dt_debug_oft = 0;
     Elf64_Phdr *dyn_phdr = get_dynamic_phdr(header);
     if (!dyn_phdr)
         return -1;
     Elf64_Dyn *dyn = add_oft(header, dyn_phdr->p_offset);
+    uintptr_t vphdr = (uintptr_t)dyn_phdr->p_vaddr;
+    uintptr_t start = (uintptr_t)dyn;
 
-    for (; dyn->d_tag != DT_NULL; ++dyn) {
+    int i = 0;
+    for (; dyn->d_tag != DT_NULL; ++dyn, ++i) {
         switch (dyn->d_tag) {
             case DT_STRTAB:
                 *dynstrtab = add_oft(header, dyn->d_un.d_ptr);
@@ -189,6 +194,9 @@ static int get_dyn_infos(Elf64_Ehdr *header, Elf64_Sym **dynsymtab,
                 break;
             case DT_GNU_HASH:
                 *gnutable = add_oft(header, dyn->d_un.d_ptr);
+                break;
+            case DT_DEBUG:
+                *dt_debug_oft = (uintptr_t)dyn - start + vphdr;
                 break;
             default:
                 break;
@@ -298,7 +306,7 @@ void get_symbols(struct melf *elf)
     elf->sym_table        = NULL; /* Same */
     elf->rela_plt         = NULL;
     if (get_dyn_infos(elf->elf, &elf->dynsymtab, &elf->dynstrtab,
-                      &elf->gnutable) == -1) {
+                      &elf->gnutable, &elf->dt_debug_oft) == -1) {
         fprintf(stderr, KRED"No exported symbols found\n"KNRM);
         return;
     }

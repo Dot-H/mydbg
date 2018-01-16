@@ -1,6 +1,7 @@
 #ifndef DPROC_H
 # define DPROC_H
 
+# include <capstone/capstone.h>
 # include <libunwind.h>
 # include <libunwind-ptrace.h>
 # include <stddef.h>
@@ -32,6 +33,7 @@ struct dproc {
     int is_attached;
     siginfo_t siginfo; /* Last signal received by \p pid */
     struct unwind unw;
+    csh handle; 
 };
 
 /**
@@ -65,6 +67,11 @@ int is_finished(struct dproc *proc);
 **
 ** \return Returns an allocated null-terminated string filled with the
 ** read bytes.
+**
+** \note If a breakpoint is present in the dump, it is replaced by its
+** saved instruction.
+**
+** \note An error is print on stderr if process_vm_readv or malloc fail
 */
 char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
                  size_t size, uintptr_t start_addr);

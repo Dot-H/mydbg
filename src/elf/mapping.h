@@ -32,6 +32,7 @@ struct melf {
     Elf64_Sym *dynsymtab;
     char *dynstrtab;
     struct gnu_table *gnutable;
+    uintptr_t dt_debug_oft; /* Vaddr of the DT_DEBUG filled by ldso */
 };
 
 /**

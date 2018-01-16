@@ -39,6 +39,8 @@ void dproc_destroy(struct dproc *proc)
         _UPT_destroy(proc->unw.ui);
     if (proc->unw.as)
         unw_destroy_addr_space(proc->unw.as);
+    if (proc->handle)
+        cs_close(&proc->handle);
 
     if (proc->is_attached)
         ptrace(PTRACE_DETACH, proc->pid, 0, 0);
@@ -62,6 +64,11 @@ char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
     int word     = sizeof(long);
     size_t alloc = size + word - (size % word);
     char *dumped = malloc(alloc);
+    if (!dumped) {
+        fprintf(stderr, "Could not allocate %zu bytes in order to read in %d",
+                size, proc->pid);
+        return NULL;
+    }
 
     struct iovec rio = { (void *)start_addr, alloc };
     struct iovec lio = { dumped, alloc };
@@ -80,7 +87,11 @@ char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
             dumped[j] = bp->sv_instr & 0xff;
     }
 
-    return dumped;
+    void *ret = realloc(dumped, readv); // Always chunked or left untouched
+    if (!ret)
+        ret = dumped;
+
+    return ret;
 }
 
 static size_t pid_hash(void *pid)

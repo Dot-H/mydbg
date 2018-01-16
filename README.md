@@ -21,7 +21,7 @@ Usage
     via the commands 'file' or 'attach'.
 
     To debug a process, the process must be traced first. It is done
-    via the commands 'run' or 'attached'.
+    via the commands 'run' or 'attach'.
 
     Every process traced via 'run' or 'follow-fork on' are killed
     when mydbg exits.
@@ -159,7 +159,7 @@ Commands
             [PID]   Continue the execution of the tracee until the next line
                     without stopping on the subcalls
 
-    examine $format size start_addr [PID]
+    examine $FORMAT SIZE [ADDR] [PID]
                     Print size bytes from start_addr with the format given in
                     argument
 

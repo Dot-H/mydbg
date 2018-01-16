@@ -45,7 +45,7 @@ int main(void)
 {
     int count = 0;
     while (1) {
-//        printf("_DYNAMIC: %p\n", (void *)_DYNAMIC);
+        printf("_DYNAMIC: %p\n", (void *)_DYNAMIC);
         printf("Count: %d\n", count);
         struct r_debug *r_debug;
         for (Elf64_Dyn *dyn = _DYNAMIC; dyn->d_tag != DT_NULL; ++dyn)

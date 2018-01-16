@@ -1,4 +1,3 @@
-#include <capstone/capstone.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -7,17 +6,20 @@
 #include "dproc.h"
 #include "print_func.h"
 
-static int do_print(char *str, size_t len, uintptr_t addr, size_t ninstr)
+static int do_print(char *str, struct dproc *proc, size_t len,
+                    uintptr_t addr, size_t ninstr)
 {
-    csh handle;
     cs_insn *insn;
 
-    if (cs_open(CS_ARCH_X86, CS_MODE_64, &handle) != CS_ERR_OK) {
-        fprintf(stderr, "Failed to initialize capstone\n");
-        return -1;
+    if (!proc->handle) {
+        if (cs_open(CS_ARCH_X86, CS_MODE_64, &proc->handle) != CS_ERR_OK) {
+            fprintf(stderr, "Failed to initialize capstone\n");
+            proc->handle = 0;
+            return -1;
+        }
     }
 
-    size_t count = cs_disasm(handle, (uint8_t *)str, len, addr, 0, &insn);
+    size_t count = cs_disasm(proc->handle, (uint8_t *)str, len, addr, 0, &insn);
     if (count > 0) {
         for (size_t j = 0; j < count && j < ninstr; j++) {
             printf("0x%lx:\t%s\t\t%s\n", insn[j].address,
@@ -32,7 +34,6 @@ static int do_print(char *str, size_t len, uintptr_t addr, size_t ninstr)
     }
 
 
-    cs_close(&handle);
     return 0;
 }
 
@@ -63,7 +64,7 @@ int do_disas(struct debug_infos *dinfos, char *args[])
     if (!dumped)
         return -1;
 
-    int ret = do_print(dumped, nb * 8, addr, nb);
+    int ret = do_print(dumped, proc, nb * 8, addr, nb);
     free(dumped);
 
     return ret;
