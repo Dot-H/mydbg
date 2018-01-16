@@ -8,7 +8,7 @@
 # include "hash_table.h"
 # include "my_dbg.h"
 
-#define TRAP_BRKPT 1
+#define BP_TRAP 1
 #define BP_HTABLE_SIZE 10
 #define BP_OPCODE 0xcc
 #define BP_NHW 4 /* Maximum number of hardware breakpoint */

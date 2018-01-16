@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
 #include <sys/wait.h>
 
 #include "dproc.h"
@@ -55,50 +56,36 @@ int is_finished(struct dproc *proc)
 char *read_dproc(struct debug_infos *dinfos, struct dproc *proc,
                  size_t size, uintptr_t start_addr)
 {
+    if (!size)
+        return NULL;
+
     int word     = sizeof(long);
-    size_t alloc = size + word - (size % word) + 1;
+    size_t alloc = size + word - (size % word);
     char *dumped = malloc(alloc);
 
-    size_t nb_call = size / word + (size % word != 0);
-    size_t i = 0;
-    for ( ; i < nb_call; ++i) {
-        void *addr   = (void *)(start_addr + i * word);
-        long data = ptrace(PTRACE_PEEKTEXT, proc->pid, addr, NULL);
-        if (data == -1)
-            goto err_free_dumped;
+    struct iovec rio = { (void *)start_addr, alloc };
+    struct iovec lio = { dumped, alloc };
 
-        memcpy(dumped + (i * word), &data, word);
-        for (int j = 0; j < word; ++j) {
-            struct breakpoint *bp =
-                bp_htable_get((void *)(start_addr + j + i * word),
-                              dinfos->bp_table);
-            if (bp)
-                dumped[i * word + j] = bp->sv_instr & 0xff;
-        }
+    ssize_t readv = process_vm_readv(proc->pid, &lio, 1, &rio, 1, 0);
+    if (readv == -1) {
+        free(dumped);
+        warn("Failed to read %d at 0x%lx", proc->pid, start_addr);
+        return NULL;
     }
 
+    for (ssize_t j = 0; j < readv; ++j) {
+        struct breakpoint *bp =
+            bp_htable_get((void *)(start_addr + j), dinfos->bp_table);
+        if (bp)
+            dumped[j] = bp->sv_instr & 0xff;
+    }
 
-    memset(dumped + size, 0, size % word);
-    struct breakpoint *bp = bp_htable_get((void *)(start_addr + 1),
-                                          dinfos->bp_table);
-    if (bp)
-        dumped[1] = bp->sv_instr & 0xff;
     return dumped;
-
-err_free_dumped:
-    free(dumped);
-    warn("Failed to PEEKTEXT %d at %lx", proc->pid, start_addr + i * word);
-    return NULL;
 }
 
-/**
-** Hash function from an article of Thomas Wang, Jan 1997.
-** https://gist.github.com/badboy/6267743
-*/
 static size_t pid_hash(void *pid)
 {
     pid_t hpid = *(pid_t *)pid;
-
     hpid = (hpid + 0x7ed55d16) + (hpid << 12);
     hpid = (hpid ^ 0xc761c23c) ^ (hpid >> 19);
     hpid = (hpid + 0x165667b1) + (hpid << 5);

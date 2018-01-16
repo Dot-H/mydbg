@@ -1,5 +1,8 @@
 ## my_dbg TODO
 
+doc:
+    [ ] doxygen
+
 portability:
     [ ] 32bits elf support
 
@@ -11,7 +14,6 @@ interaction:
         and send sigstop to tracee if not
 
 commands:
-    [ ] add pid argument to break
     [ ] argument N to singlestep and next_instr
     [ ] negative argument to list
     [ ] follow fork mode
